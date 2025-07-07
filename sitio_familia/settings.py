@@ -10,7 +10,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY not set in environment")
 
-DEBUG = True  # Cambiar a False en producción
+DEBUG = False  # Cambiar a False en producción
 ALLOWED_HOSTS = ['*']  # Cambiar en producción
 
 # Archivos estáticos y media
@@ -79,6 +79,11 @@ DATABASES = {
     }
 }
 
+# Configuración para Heroku
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
+
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -100,3 +105,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+
+
