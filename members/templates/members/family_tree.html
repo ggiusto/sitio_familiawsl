@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Árbol Genealógico Completo</h1>
+        <div id="tree-container" class="overflow-auto bg-gray-50 p-4 border rounded-lg" style="height: 700px; width: 100%;">
+            <svg id="family-tree-svg" class="w-full h-full"></svg>
+        </div>
+
+        <div class="mt-8 text-center">
+            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">Volver a la Lista de Miembros</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const treeData = {{ tree_data|safe }};
+
+    if (!treeData || treeData.length === 0 || (treeData.length === 1 && Object.keys(treeData[0]).length === 0)) {
+        const container = document.getElementById('tree-container');
+        container.innerHTML = '<p class="text-center text-gray-600">No hay datos suficientes para generar el árbol genealógico.</p>';
+        return;
+    }
+
+    const svgElement = document.getElementById('family-tree-svg');
+    const width = svgElement.clientWidth;
+    const height = svgElement.clientHeight;
+
+    const svg = d3.select(svgElement);
+    svg.selectAll("*").remove(); // Clear any existing content
+
+    const g = svg.append("g");
+
+    // Define the tree layout
+    // Adjusted width to account for deeper trees and potential labels
+    const treemap = d3.tree().size([height, width - 300]); 
+
+    // Create a hierarchy for each root member and combine them
+    const hierarchies = treeData.map(d => d3.hierarchy(d));
+
+    let allNodes = [];
+    let allLinks = [];
+
+    // Process each hierarchy
+    hierarchies.forEach(root => {
+        treemap(root); // Apply the tree layout to each root
+
+        // Collect nodes and links, adjusting for combined layout later
+        allNodes = allNodes.concat(root.descendants());
+        allLinks = allLinks.concat(root.links());
+    });
+    
+    // Calculate overall dimensions to center all trees
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    allNodes.forEach(d => {
+        // d.y corresponds to x-position in horizontal tree, d.x to y-position
+        minX = Math.min(minX, d.y);
+        maxX = Math.max(maxX, d.y);
+        minY = Math.min(minY, d.x);
+        maxY = Math.max(maxY, d.x);
+    });
+
+    const combinedTreeWidth = maxX - minX;
+    const combinedTreeHeight = maxY - minY;
+
+    // Calculate initial translation to center the combined tree
+    const initialTranslateX = (width / 2) - (combinedTreeWidth / 2) - minX;
+    const initialTranslateY = (height / 2) - (combinedTreeHeight / 2) - minY;
+
+    g.attr("transform", `translate(${initialTranslateX}, ${initialTranslateY})`);
+
+
+    // Add links between nodes
+    g.selectAll(".link")
+        .data(allLinks)
+        .enter().append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkHorizontal()
+            .x(d => d.y)
+            .y(d => d.x))
+        .attr("fill", "none")
+        .attr("stroke", "#ccc")
+        .attr("stroke-width", 2);
+
+    // Add each node as a group
+    const node = g.selectAll(".node")
+        .data(allNodes)
+        .enter().append("g")
+        .attr("class", d => "node" + (d.children ? " node--internal" : " node--leaf"))
+        .attr("transform", d => `translate(${d.y},${d.x})`);
+
+    // Add circles for the nodes
+    node.append("circle")
+        .attr("r", 8)
+        .attr("fill", "#4fa3f7")
+        .attr("stroke", "#222")
+        .attr("stroke-width", 1.5);
+
+    // Add labels for the nodes
+    node.append("text")
+        .attr("dy", ".35em")
+        .attr("x", d => d.children ? -28 : 28)
+        .style("text-anchor", d => d.children ? "end" : "start")
+        .style("font-size", "6px")
+        .style("fill", "#222")
+        .text(d => d.data.name);
+
+    // Zoom and Pan functionality
+    const zoom = d3.zoom()
+        .scaleExtent([0.1, 4])
+        .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        });
+
+    svg.call(zoom);
+
+});
+</script>
+<style>
+/* Estilos para el contenedor del árbol */
+#tree-container {
+    overflow: auto; /* Permite scroll si el árbol es más grande que el contenedor */
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* Estilos para los enlaces (líneas) del árbol */
+.link {
+    stroke: #b3b3b3;
+}
+
+/* Estilos para los nodos (círculos) del árbol */
+.node circle {
+    stroke: #222;
+    stroke-width: 2px;
+    cursor: pointer;
+    transition: fill 0.3s ease;
+}
+
+.node circle:hover {
+    fill: #3498db; /* Un color diferente al pasar el ratón */
+}
+
+/* Estilos para el texto de los nodos */
+.node text {
+    font-family: 'Inter', sans-serif; /* Usar Inter font */
+    pointer-events: none; /* Asegura que el texto no interfiera con eventos de ratón en el círculo */
+}
+
+/* Ocultar etiquetas si los nodos internos no tienen nombre, o si son nombres de agrupacion */
+.node--internal text {
+    /* Puedes ajustar esto si quieres que los nombres de grupos como "Hijos" se muestren o no */
+}
+</style>
+{% endblock %}

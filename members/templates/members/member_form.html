@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load member_extras %} {# ¡CORRECCIÓN CLAVE!: Carga el módulo de filtros personalizados #}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10">
+<div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">
+        {% if form.instance.pk %}Editar Miembro{% else %}Agregar Miembro{% endif %}
+    </h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="border-b mb-4">
+            <nav class="flex space-x-2" id="tabs">
+                {% for tab in tabs %}
+                <button type="button" class="tab-btn py-2 px-4 text-sm text-gray-600 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 {% if forloop.first %}active border-blue-600 text-blue-600{% endif %}" data-tab="{{ tab }}">{{ tab|capfirst }}</button>
+                {% endfor %}
+            </nav>
+        </div>
+
+        <div id="tab-content" class="space-y-6">
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4" id="info">
+                {% for field_name in info_fields %}
+                    {# Ahora, este filtro 'get_form_field' será reconocido por Django #}
+                    {% with field=form|get_form_field:field_name %}
+                    {% if field %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-4" id="contacto">
+                {% for field_name in contacto_fields %}
+                    {% with field=form|get_form_field:field_name %}
+                    {% if field %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-4" id="redes">
+                {% for field_name in redes_fields %}
+                    {% with field=form|get_form_field:field_name %}
+                    {% if field %}
+                        <div>
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex justify-between mt-8">
+            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">Cancelar</a>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">Guardar</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = document.querySelectorAll(".tab-btn");
+    const panels = document.querySelectorAll(".tab-panel");
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+            buttons.forEach(btn => btn.classList.remove("active", "border-blue-600", "text-blue-600"));
+            button.classList.add("active", "border-blue-600", "text-blue-600");
+
+            panels.forEach(panel => panel.classList.add("hidden"));
+            document.getElementById(button.dataset.tab).classList.remove("hidden");
+        });
+    });
+});
+</script>
+{% endblock %}

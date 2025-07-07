@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>{{ foto.titulo }}</h2>
+<img src="{{ foto.imagen.url }}" alt="{{ foto.titulo }}" class="photo-full">
+<p>Descripcion: {{ foto.descripcion }}</p>
+<p>Subida por: {{ foto.autor.username }} el {{ foto.fecha_subida|date:"d M Y H:i" }}</p>
+<a href="{% url 'photos:photo_list' %}">Volver a Fotos</a>
+{% endblock %}
+
+def photo_detail(request, pk):
+    photo = get_object_or_404(Photo, pk=pk)
+    return render(request, 'photos/photo_detail.html', {'photo': photo})

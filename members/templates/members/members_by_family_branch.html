@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+    <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Miembros por Rama Familiar</h1>
+
+        <div class="space-y-8">
+            {% for branch_name, members_in_branch in sorted_branches %}
+                <div class="border rounded-lg p-6 bg-gray-50">
+                    <h2 class="text-2xl font-semibold text-blue-700 mb-4">{{ branch_name }}</h2>
+                    <ul class="list-disc list-inside space-y-2">
+                        {% for member in members_in_branch %}
+                            <li>
+                                <a href="{% url 'members:member_detail' member.pk %}" class="text-blue-600 hover:underline">
+                                    {{ member.first_name }} {{ member.last_name_paterno }} {{ member.last_name_materno }}
+                                    {% if member.apodo %}({{ member.apodo }}){% endif %}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% empty %}
+                <p class="text-center text-gray-600">No hay miembros registrados para agrupar por rama familiar.</p>
+            {% endfor %}
+        </div>
+
+        <div class="mt-8 text-center">
+            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">Volver a la Lista de Miembros</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

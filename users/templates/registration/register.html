@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %} - Registrarse{% endblock %}
+{% block page_title %}Registrarse{% endblock %}
+
+{% block content %}
+    <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="mb-4">
+                    <label for="{{ field.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">{{ field.label }}:</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="text-gray-500 text-xs italic">{{ field.help_text }}</small>
+                    {% endif %}
+                    {% if field.errors %}
+                        <ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% if form.non_field_errors %}
+                <ul class="errorlist mb-4">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            {% endif %}
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 w-full">
+                Registrarse
+            </button>
+        </form>
+        <p class="mt-4 text-center text-gray-600">
+            ¿Ya tienes una cuenta? <a href="{% url 'login' %}" class="text-indigo-600 hover:underline">Inicia sesión aquí</a>.
+        </p>
+    </div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %} - Resultados de Búsqueda{% endblock %}
+{% block page_title %}Resultados para: "{{ query }}"{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    {% if results %}
+        <section>
+            <h2 class="text-2xl font-semibold text-indigo-700 mb-4">Miembros</h2>
+            <ul class="space-y-2">
+                {% for member in results %}
+                    <li>
+                        <a href="{% url 'members:member_detail' member.pk %}" class="text-lg text-indigo-600 hover:underline">
+                            {{ member.first_name }} {{ member.last_name_paterno }} {{ member.last_name_materno }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if stories %}
+        <section>
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">Historias</h2>
+            <ul class="space-y-2">
+                {% for story in stories %}
+                    <li>
+                        <a href="{% url 'story_detail' story.pk %}" class="text-lg text-blue-600 hover:underline">
+                            {{ story.title }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if photos %}
+        <section>
+            <h2 class="text-2xl font-semibold text-green-700 mb-4">Fotos</h2>
+            <ul class="space-y-2">
+                {% for photo in photos %}
+                    <li>
+                        <span class="text-lg text-gray-800">{{ photo.description }}</span>
+                        {% if photo.image %}
+                            <div class="mt-1">
+                                <img src="{{ photo.image.url }}" alt="{{ photo.description }}" class="w-32 h-32 object-cover rounded shadow">
+                            </div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if not results and not stories and not photos %}
+        <p class="text-gray-500 text-lg">No se encontraron resultados para "{{ query }}".</p>
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %} - Iniciar Sesión{% endblock %}
+{% block page_title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+    <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="{{ form.username.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Usuario:</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="errorlist">{% for error in form.username.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+            <div class="mb-6">
+                <label for="{{ form.password.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <ul class="errorlist">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div>
+            {% if form.non_field_errors %}
+                <ul class="errorlist mb-4">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+            {% endif %}
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300 w-full">
+                Iniciar Sesión
+            </button>
+        </form>
+        <p class="mt-4 text-center text-gray-600">
+            ¿No tienes una cuenta? <a href="{% url 'register' %}" class="text-indigo-600 hover:underline">Regístrate aquí</a>.
+        </p>
+    </div>
+{% endblock %}

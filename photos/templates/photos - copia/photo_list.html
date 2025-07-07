@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Fotos de la Familia</h2>
+{% if perms.photos.add_photo %}
+    <a href="{% url 'photos:photo_upload' %}" class="btn">Subir Nueva Foto</a>
+{% endif %}
+<div class="photo-gallery">
+    {% for foto in fotos %}
+        <div class="photo-item">
+            <a href="{% url 'photos:photo_detail' foto.pk %}">
+                <img src="{{ foto.imagen.url }}" alt="{{ foto.titulo }}" class="thumb">
+            </a>
+            <p>{{ foto.titulo }}</p>
+        </div>
+    {% empty %}
+        <p>No hay fotos subidas aún.</p>
+    {% endfor %}
+</div>
+{% endblock %}

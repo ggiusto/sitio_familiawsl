@@ -1,0 +1,43 @@
+ {% extends 'base.html' %}
+
+{% block title %} - Fotos{% endblock %}
+{% block page_title %}Fotos Familiares{% endblock %}
+
+{% block content %}
+    <div class="mb-6">
+        <a href="{% url 'photo_upload' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300">
+            Subir Nueva Foto
+        </a>
+    </div>
+
+    {% if photos %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for photo in photos %}
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+                    <a href="{% url 'photo_detail' pk=photo.pk %}" class="block overflow-hidden h-48">
+                        <img src="{{ photo.image.url }}" alt="{{ photo.title|default:'Foto Familiar' }}" class="w-full h-full object-cover transform hover:scale-105 transition duration-300">
+                    </a>
+                    <div class="p-4 flex-grow">
+                        <h3 class="text-lg font-semibold text-indigo-800 mb-1 line-clamp-1">
+                            {{ photo.title|default:'Sin Título' }}
+                        </h3>
+                        <p class="text-gray-600 text-sm line-clamp-2">{{ photo.description|default:'Sin descripción.' }}</p>
+                    </div>
+                    <div class="p-4 border-t border-gray-200 text-xs text-gray-500">
+                        <p>Subido por: {{ photo.uploaded_by.username }}</p>
+                        <p>Fecha: {{ photo.uploaded_at|date:"d M Y" }}</p>
+                    </div>
+                    <div class="p-4 border-t border-gray-200 flex justify-end space-x-2">
+                        <a href="{% url 'photo_detail' pk=photo.pk %}" class="text-blue-600 hover:text-blue-900 text-sm">Ver</a>
+                        {% if user == photo.uploaded_by or user.is_superuser %}
+                            <a href="{% url 'photo_update' pk=photo.pk %}" class="text-yellow-600 hover:text-yellow-900 text-sm">Editar</a>
+                            <a href="{% url 'photo_delete' pk=photo.pk %}" class="text-red-600 hover:text-red-900 text-sm">Eliminar</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-gray-600">No hay fotos familiares subidas todavía. ¡Sé el primero en subir una!</p>
+    {% endif %}
+{% endblock %}

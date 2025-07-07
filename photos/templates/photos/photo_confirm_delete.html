@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %} - Confirmar Eliminación{% endblock %}
+{% block page_title %}Confirmar Eliminación de Foto{% endblock %}
+
+{% block content %}
+    <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg text-center">
+        <p class="text-lg text-gray-700 mb-6">¿Estás seguro de que quieres eliminar esta foto?</p>
+        <div class="mb-6">
+            <img src="{{ photo.image.url }}" alt="{{ photo.title|default:'Foto a eliminar' }}" class="max-w-full h-auto rounded-lg shadow-md mx-auto">
+            <p class="text-sm text-gray-500 mt-2">{{ photo.title|default:'Sin Título' }}</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex justify-center space-x-4">
+                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Sí, eliminar
+                </button>
+                <a href="{% url 'photo_detail' pk=photo.pk %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    No, cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

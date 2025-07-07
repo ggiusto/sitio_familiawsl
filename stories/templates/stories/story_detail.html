@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %} - {{ story.title }}{% endblock %}
+{% block page_title %}{{ story.title }}{% endblock %}
+
+{% block content %}
+    <div class="bg-white p-8 rounded-xl shadow-lg max-w-3xl mx-auto">
+        <p class="text-sm text-gray-500 mb-4">
+            Por: <span class="font-semibold">{{ story.author.username }}</span> | Publicado: {{ story.created_at|date:"d M Y H:i" }}
+            {% if story.created_at != story.updated_at %}
+                (Última actualización: {{ story.updated_at|date:"d M Y H:i" }})
+            {% endif %}
+        </p>
+        <div class="prose max-w-none text-gray-700 leading-relaxed mb-8">
+            {{ story.content|linebreaksbr }} {# Muestra el contenido con saltos de línea #}
+        </div>
+
+        <div class="flex justify-end space-x-4 mt-8">
+            {% if user == story.author or user.is_superuser %}
+                <a href="{% url 'story_update' pk=story.pk %}" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Editar
+                </a>
+                <a href="{% url 'story_delete' pk=story.pk %}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-300">
+                    Eliminar
+                </a>
+            {% endif %}
+            <a href="{% url 'story_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-md shadow-md transition duration-300">
+                Volver a Historias
+            </a>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10">
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Lista de Miembros</h1>
+            <div class="flex space-x-3"> {# Added a div to group navigation buttons #}
+                <a href="{% url 'members:member_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg shadow">
+                    Agregar Miembro
+                </a>
+                <a href="{% url 'members:family_branches' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow">
+                    Ver Ramas Familiares {# NEW BUTTON #}
+                </a>
+                {# Puedes agregar aquí los otros botones si los tienes definidos o los definirás #}
+                {# <a href="{% url 'members:stories' %}" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg shadow">Leer Historias</a> #}
+                {# <a href="{% url 'members:photos' %}" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow">Ver Fotos</a> #}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for member in members %}
+                <div class="bg-white rounded-lg shadow p-4"> {# Este es el div de la tarjeta de miembro #}
+                    <div class="flex items-center space-x-4">
+                        {% if member.foto_principal %}
+                            <img src="{{ member.foto_principal.url }}" alt="{{ member.first_name }} {{ member.last_name_paterno }}" class="w-16 h-16 rounded-full object-cover">
+                        {% else %}
+                            <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                                <span class="text-sm">Sin foto</span>
+                            </div>
+                        {% endif %}
+                        <div>
+                            <h2 class="text-xl font-semibold">{{ member.first_name }} {{ member.last_name_paterno }}</h2>
+                            <p class="text-sm text-gray-600">Fecha de nacimiento: {{ member.birth_date|date:"Y-m-d" }}</p>
+                        </div>
+                    </div>
+                    {# AHORA ESTE DIV ESTÁ DENTRO DEL DIV DE LA TARJETA, ASEGURANDO QUE LOS BOTONES PERTENEZCAN A CADA MIEMBRO INDIVIDUAL #}
+                    <div class="mt-4 flex space-x-2">
+                        <a href="{% url 'members:member_detail' member.pk %}" class="text-sm text-blue-600 hover:underline">Ver</a>
+                        <a href="{% url 'members:member_update' member.pk %}" class="text-sm text-yellow-600 hover:underline">Editar</a>
+                        <a href="{% url 'members:member_delete' member.pk %}" class="text-sm text-red-600 hover:underline">Eliminar</a>
+                    </div>
+                </div> {# Cierre del div de la tarjeta de miembro #}
+            {% empty %}
+                <p class="col-span-full text-center text-gray-600">No hay miembros registrados aún.</p>
+            {% endfor %}
+        </div>
+
+        {# Paginación #}
+        {% if is_paginated %}
+        <div class="flex justify-center mt-8">
+            <nav class="relative z-0 inline-flex shadow-sm -space-x-px" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Previous</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                </a>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+                <a href="?page={{ i }}" class="{% if page_obj.number == i %}z-10 bg-blue-50 border-blue-500 text-blue-600{% else %}bg-white border-gray-300 text-gray-700{% endif %} relative inline-flex items-center px-4 py-2 border text-sm font-medium hover:bg-gray-50">
+                {{ i }}
+                </a>
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">Next</span>
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                </svg>
+                </a>
+            {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}
