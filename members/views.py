@@ -27,7 +27,7 @@ class MemberCreateView(CreateView):
         context['info_fields'] = [
             "first_name", "last_name_paterno", "last_name_materno", "apodo",
             "birth_date", "fallecimiento_date", "lugar_nacimiento", "foto_principal",
-            "estudios", "ocupación", "relationship",
+            "estudios", "ocupacion", "relationship",
             "padre", "madre", "conyuge",
             "padrino_de_bautismo", "madrina_de_bautismo",
         ]
@@ -54,7 +54,7 @@ class MemberUpdateView(UpdateView):
         context['info_fields'] = [
             "first_name", "last_name_paterno", "last_name_materno", "apodo",
             "birth_date", "fallecimiento_date", "lugar_nacimiento", "foto_principal",
-            "estudios", "ocupación", "relationship",
+            "estudios", "ocupacion", "relationship",
             "padre", "madre", "conyuge",
             "padrino_de_bautismo", "madrina_de_bautismo",
         ]
@@ -75,45 +75,70 @@ class MemberDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         member = self.object
 
-        # Dynamically get all non-relational fields for display in "Datos Personales"
-        excluded_from_general_info = [
-            'id', 'foto_principal', # Handled explicitly for display
-            'padre', 'madre', 'conyuge', # Handled explicitly as related objects
-            'padrino_de_bautismo', 'madrina_de_bautismo', # Handled explicitly as family string fields
-            'correomail', 'phone_number', 'address', # Handled in contact section
-            'whatsapp', 'facebook', 'linkedin', "instabram", # Handled in social media section
-            'birth_date', 'fallecimiento_date', # Handled explicitly in header (birth and death date)
-            'first_name', 'last_name_paterno', 'last_name_materno', # Handled explicitly in header
+        # Definir explícitamente los campos para la sección "Información General"
+        # Estos son campos que no están en la cabecera (nombre, fechas) ni en las otras pestañas (contacto, redes)
+        # y no son relaciones directas (padre, madre, cónyuge, hijos, hermanos, etc.)
+        general_info_field_names = [
+            'apodo',
+            'lugar_nacimiento',
+            'estudios',
+            'ocupacion',
+            # 'relationship' se maneja directamente en la plantilla con member.get_relationship_display
+            # 'padrino_de_bautismo' y 'madrina_de_bautismo' se manejan directamente como valores
         ]
         
         context['general_info_fields'] = []
-        for field in Member._meta.fields:
-            # Check if it's not a ForeignKey, ManyToManyField, or explicitly excluded
-            if field.name not in excluded_from_general_info and not isinstance(field, (models.ForeignKey, models.ManyToManyField)):
+        for field_name in general_info_field_names:
+            try:
+                field = Member._meta.get_field(field_name)
                 context['general_info_fields'].append(field)
-        
-        # Pass specific related members for explicit display
+            except models.FieldDoesNotExist:
+                # Esto es útil si un campo en la lista no existe en el modelo
+                print(f"Advertencia: El campo '{field_name}' no existe en el modelo Member.")
+
+
+        # Pasar objetos de relaciones directas
         context['padre_obj'] = member.padre
         context['madre_obj'] = member.madre
         context['conyuge_obj'] = member.conyuge
         
-        # Pass fields for baptism godparents (these are CharFields)
+        # Pasar campos para padrinos (estos son CharFields)
         context['padrino_bautismo_val'] = member.padrino_de_bautismo
         context['madrina_bautismo_val'] = member.madrina_de_bautismo
 
-        # Pass related children, siblings, and deeper generations
+        # --- IMPORTANTE: Asegúrate de que estos métodos existan en tu modelo Member y devuelvan QuerySets ---
+        # Por ejemplo, en tu models.py, deberías tener algo como:
+        # class Member(models.Model):
+        #     ...
+        #     def hijos(self):
+        #         return Member.objects.filter(Q(padre=self) | Q(madre=self))
+        #     def hermanos(self):
+        #         # Lógica para obtener hermanos (puede ser compleja si los padres no están registrados)
+        #         if self.padre and self.madre:
+        #             return Member.objects.filter(Q(padre=self.padre) | Q(madre=self.madre)).exclude(pk=self.pk)
+        #         elif self.padre:
+        #             return Member.objects.filter(padre=self.padre).exclude(pk=self.pk)
+        #         elif self.madre:
+        #             return Member.objects.filter(madre=self.madre).exclude(pk=self.pk)
+        #         return Member.objects.none()
+        #     def nietos(self):
+        #         # Obtener hijos de los hijos
+        #         hijos_pks = [hijo.pk for hijo in self.hijos()]
+        #         return Member.objects.filter(Q(padre__in=hijos_pks) | Q(madre__in=hijos_pks))
+        #     # Y así sucesivamente para bisnietos, tataranietos, choznos
+        # ----------------------------------------------------------------------------------------------------
+
         context['hijos'] = member.hijos().all()
         context['hermanos'] = member.hermanos().all()
-        context['nietos'] = member.nietos().all() # Get grandchildren
-        context['bisnietos'] = member.bisnietos().all() # ADDED: Get bisnietos
-        context['tataranietos'] = member.tataranietos().all() # ADDED: Get tataranietos
-        context['choznos'] = member.choznos().all() # ADDED: Get choznos
+        context['nietos'] = member.nietos().all() 
+        context['bisnietos'] = member.bisnietos().all()
+        context['tataranietos'] = member.tataranietos().all()
+        context['choznos'] = member.choznos().all()
 
-        # --- Tree data for d3.js - Revised recursive building ---
+        # --- Datos del árbol para d3.js - Versión revisada para incluir fechas y evitar bucles ---
 
-        # Helper function to build a node for the tree, only including its direct children (descendants)
-        # This function should NOT add 'Padres' or 'Cónyuge' nodes, as those are handled at the top level for the 'member'.
-        def build_descendant_tree_node(member_obj, visited_pks):
+        # Helper function para construir un nodo para el árbol, incluyendo datos de fecha
+        def build_tree_node(member_obj, visited_pks):
             if member_obj is None or member_obj.pk in visited_pks:
                 return None
             
@@ -122,56 +147,45 @@ class MemberDetailView(DetailView):
             node_data = {
                 'name': f"{member_obj.first_name or ''} {member_obj.last_name_paterno or ''}".strip(),
                 'id': member_obj.pk,
+                'birth_date': member_obj.birth_date.strftime("%d-%m-%Y") if member_obj.birth_date else '',
+                'fallecimiento_date': member_obj.fallecimiento_date.strftime("%d-%m-%Y") if member_obj.fallecimiento_date else '',
+                'is_current': member_obj.pk == member.pk, # Para destacar al miembro actual
                 'children': []
             }
 
-            # Recursively add only direct children (descendants)
+            # Recursivamente añadir solo los hijos directos
             for child in member_obj.hijos().all():
-                child_subtree = build_descendant_tree_node(child, visited_pks)
+                child_subtree = build_tree_node(child, visited_pks)
                 if child_subtree:
                     node_data['children'].append(child_subtree)
             
             return node_data
 
-        # Initialize the main member's node for the D3 tree
-        # Use a single visited set for the entire tree building process to prevent loops
-        global_visited_pks = set() 
-        root_node_for_tree = {
-            'name': f"{member.first_name or ''} {member.last_name_paterno or ''} {member.last_name_materno or ''}".strip(),
-            'id': member.pk,
-            'children': []
-        }
-        global_visited_pks.add(member.pk) # Mark the root member as visited
-
-        # Add Parents branch for the main member (if they exist)
-        parents_group_children = []
-        if member.padre and member.padre.pk not in global_visited_pks:
-            parents_group_children.append(build_descendant_tree_node(member.padre, global_visited_pks))
-        if member.madre and member.madre.pk not in global_visited_pks:
-            parents_group_children.append(build_descendant_tree_node(member.madre, global_visited_pks))
+        # Inicializar el conjunto de PKS visitadas para la construcción del árbol
+        global_visited_pks = set()
         
-        valid_parents = [p for p in parents_group_children if p is not None]
-        if valid_parents:
-            root_node_for_tree['children'].append({'name': 'Padres', 'children': valid_parents})
-
-        # Add Spouse for the main member (if exists)
-        if member.conyuge and member.conyuge.pk not in global_visited_pks:
-            spouse_node = build_descendant_tree_node(member.conyuge, global_visited_pks)
-            if spouse_node:
-                spouse_node['name'] += ' (Cónyuge)'
-                root_node_for_tree['children'].append(spouse_node)
-
-        # Add Hijos branch (actual children of the root member)
-        children_nodes_for_root = []
-        for child in member.hijos().all():
-            child_subtree = build_descendant_tree_node(child, global_visited_pks)
-            if child_subtree:
-                children_nodes_for_root.append(child_subtree)
+        # Construir el nodo raíz para el miembro actual
+        root_node_for_tree = build_tree_node(member, global_visited_pks)
         
-        if children_nodes_for_root:
-            # Append children directly to the root member's children list
-            # No intermediate "Hijos" grouping node here for the main member's direct children
-            root_node_for_tree['children'].extend(children_nodes_for_root)
+        if root_node_for_tree: # Asegurarse de que el nodo principal se construyó
+            # Añadir Padres como una rama separada si existen
+            parents_group_children = []
+            if member.padre and member.padre.pk not in global_visited_pks:
+                parents_group_children.append(build_tree_node(member.padre, global_visited_pks))
+            if member.madre and member.madre.pk not in global_visited_pks:
+                parents_group_children.append(build_tree_node(member.madre, global_visited_pks))
+            
+            valid_parents = [p for p in parents_group_children if p is not None]
+            if valid_parents:
+                # Crear un nodo ficticio 'Padres' para agrupar
+                root_node_for_tree['children'].insert(0, {'name': 'Padres', 'id': 'parents_group', 'children': valid_parents})
+
+            # Añadir Cónyuge como una rama separada si existe
+            if member.conyuge and member.conyuge.pk not in global_visited_pks:
+                spouse_node = build_tree_node(member.conyuge, global_visited_pks)
+                if spouse_node:
+                    spouse_node['name'] += ' (Cónyuge)'
+                    root_node_for_tree['children'].insert(0, spouse_node) # Insertar al principio o según preferencia
 
         context['tree_data'] = json.dumps(root_node_for_tree) if root_node_for_tree else '{}'
 
@@ -183,42 +197,52 @@ class MemberDeleteView(DeleteView):
     template_name = 'members/member_confirm_delete.html'
     success_url = reverse_lazy('members:member_list')
 
-# This view is for the general family tree, not the individual member detail tree.
+
+# Esta vista es para el árbol genealógico general, no el árbol del detalle de un miembro individual.
 def family_tree_view(request):
     members = Member.objects.all()
 
-    def build_tree_from_root(member, visited):
-        if not member or member.pk in visited:
+    def build_tree_from_root(member_obj, visited_pks):
+        if not member_obj or member_obj.pk in visited_pks:
             return None
-        visited.add(member.pk)
+        visited_pks.add(member_obj.pk)
 
         node = {
-            'name': f"{member.first_name or ''} {member.last_name_paterno or ''}".strip(),
-            'id': member.pk, # Add ID for potential linking
+            'name': f"{member_obj.first_name or ''} {member_obj.last_name_paterno or ''}".strip(),
+            'id': member_obj.pk,
+            'birth_date': member_obj.birth_date.strftime("%d-%m-%Y") if member_obj.birth_date else '',
+            'fallecimiento_date': member_obj.fallecimiento_date.strftime("%d-%m-%Y") if member_obj.fallecimiento_date else '',
             'children': []
         }
 
-        # Add spouse if exists and not already visited
-        if member.conyuge and member.conyuge.pk not in visited:
+        # Añadir cónyuge si existe y no ha sido visitado para evitar bucles o duplicados
+        # Nota: para un d3.tree, añadir cónyuges como 'hijos' no es el modelo más adecuado
+        # para un gráfico de árbol estricto. Un 'graph' (d3-force) sería mejor para relaciones complejas.
+        if member_obj.conyuge and member_obj.conyuge.pk not in visited_pks:
+            # Aquí se puede añadir el cónyuge como un 'hermano' o un nodo 'conyugal' en el mismo nivel,
+            # pero para el modelo actual de d3.tree lo añadimos como hijo para que se visualice.
             node['children'].append({
-                'name': f"{member.conyuge.first_name or ''} {member.conyuge.last_name_paterno or ''} (Cónyuge)".strip(),
-                'id': member.conyuge.pk,
+                'name': f"{member_obj.conyuge.first_name or ''} {member_obj.conyuge.last_name_paterno or ''} (Cónyuge)".strip(),
+                'id': member_obj.conyuge.pk,
+                'birth_date': member_obj.conyuge.birth_date.strftime("%d-%m-%Y") if member_obj.conyuge.birth_date else '',
+                'fallecimiento_date': member_obj.conyuge.fallecimiento_date.strftime("%d-%m-%Y") if member_obj.conyuge.fallecimiento_date else '',
             })
+            visited_pks.add(member_obj.conyuge.pk) # Marcar cónyuge como visitado
 
-        # Recursively add children and their descendants
-        hijos = member.hijos().all()
+        # Recursivamente añadir hijos y sus descendientes
+        hijos = member_obj.hijos().all() # Asegúrate de que member_obj.hijos() existe
         for hijo in hijos:
-            child_subtree = build_tree_from_root(hijo, visited)
+            child_subtree = build_tree_from_root(hijo, visited_pks)
             if child_subtree:
                 node['children'].append(child_subtree)
         
         return node
 
-    # Find members who are considered "roots" (have no parents within the system)
+    # Encuentra miembros que son "raíces" (no tienen padres registrados en el sistema)
     def find_roots():
         all_members = Member.objects.all()
         
-        # Identify all members who are children of someone in the database
+        # Identificar todos los miembros que son hijos de alguien en la base de datos
         children_pks = set()
         for m in all_members:
             if m.padre:
@@ -226,15 +250,13 @@ def family_tree_view(request):
             if m.madre:
                 children_pks.add(m.pk)
         
-        # Roots are members who are not found in the `children_pks` set
+        # Las raíces son miembros que no están en el conjunto `children_pks`
         roots = [m for m in all_members if m.pk not in children_pks]
         
-        # Fallback: if no clear roots (e.g., all members have parents but some parents are missing from DB),
-        # or if the database is empty, return an empty list or the first member.
+        # Alternativa: si no hay raíces claras (ej. todos los miembros tienen padres pero algunos padres faltan de la DB),
+        # o si la base de datos está vacía, devuelve el miembro más antiguo como punto de partida.
         if not roots and all_members.exists():
-            # If everyone has parents, it might indicate a fragmented tree or an issue.
-            # As a last resort, return the oldest member by birth date as a starting point.
-            return [all_members.order_by('birth_date').first()]
+            return [all_members.order_by('birth_date').first()] if all_members.filter(birth_date__isnull=False).exists() else [all_members.first()]
             
         return roots
 
@@ -242,23 +264,23 @@ def family_tree_view(request):
     full_tree_data = []
     visited_for_full_tree = set()
     
-    # Get all roots and build a tree for each
+    # Obtener todas las raíces y construir un árbol para cada una
     roots_to_process = find_roots()
         
     for root_member in roots_to_process:
-        # Only build a subtree if the root hasn't been visited yet (e.g., as part of another root's branch)
+        # Solo construir un subárbol si la raíz no ha sido visitada aún
         if root_member.pk not in visited_for_full_tree:
             subtree = build_tree_from_root(root_member, visited_for_full_tree)
             if subtree:
                 full_tree_data.append(subtree)
     
-    # If after processing all identified roots, we still have unvisited members,
-    # it means there are disconnected segments. Try to build trees for them too.
-    if not full_tree_data and members.exists():
-        # This block ensures we always attempt to generate some tree, even if relationships are sparse or fragmented.
-        for member in members:
-            if member.pk not in visited_for_full_tree:
-                subtree = build_tree_from_root(member, visited_for_full_tree)
+    # Si después de procesar todas las raíces identificadas, aún tenemos miembros no visitados,
+    # significa que hay segmentos desconectados. Intentar construir árboles para ellos también.
+    # Esto ayuda a visualizar datos fragmentados.
+    if members.exists(): # Solo si hay miembros en la DB
+        for member_obj in members:
+            if member_obj.pk not in visited_for_full_tree:
+                subtree = build_tree_from_root(member_obj, visited_for_full_tree)
                 if subtree:
                     full_tree_data.append(subtree)
         
@@ -301,14 +323,4 @@ def members_by_family_branch_view(request):
     }
     return render(request, 'members/members_by_family_branch.html', context)
 
-
-def editar_miembro(request, pk):
-    miembro = get_object_or_404(Member, pk=pk)
-    if request.method == 'POST':
-        form = MemberForm(request.POST, instance=miembro)
-        if form.is_valid():
-            form.save()
-            return redirect('miembros_lista')  # Cambia por el nombre correcto de tu vista de listado
-    else:
-        form = MemberForm(instance=miembro)
-    return render(request, 'members/editar_miembro.html', {'form': form})
+# La función 'editar_miembro' ha sido eliminada ya que 'MemberUpdateView' cumple la misma función.
