@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LOS BIDART {% block title %}{% endblock %}</title>
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,57 +17,50 @@
             }
         }
     </script>
-    <!-- Fuente Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
-    <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <!-- 
-    Quitar estilos con @apply porque no funcionan sin procesar Tailwind.
-    Para estilos personalizados usa clases Tailwind directamente en las plantillas.
-    -->
-</head>
+    </head>
 <body class="font-sans bg-gray-100 text-gray-800 antialiased min-h-screen flex flex-col">
 
-    <header class="bg-indigo-700 text-white shadow-md py-4 px-6 md:px-10 lg:px-16 rounded-b-lg">
-        <nav class="container mx-auto flex justify-between items-center">
-            <a href="{% url 'home' %}" class="text-2xl font-bold rounded-md p-2 hover:bg-indigo-600 transition duration-300">
-                La Familia Bidart - Una Gran Familia con Historia
+    <header class="bg-indigo-700 text-white shadow-md py-4 px-6 md:px-10 lg:px-16">
+        <nav class="container mx-auto flex justify-between items-center relative">
+            <a href="{% url 'home' %}" class="text-xl sm:text-2xl font-bold rounded-md p-2 hover:bg-indigo-600 transition duration-300">
+                <span class="hidden sm:inline">La Familia Bidart - Una Gran Familia con Historia</span>
+                <span class="inline sm:hidden">La Familia Bidart</span>
             </a>
 
-            <div class="flex items-center space-x-6">
+            <button id="menu-toggle" class="sm:hidden text-white focus:outline-none">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
 
-                {% if user.is_authenticated %}
-                    <span class="text-indigo-200">Hola, {{ user.username }}</span>
-
-                    <form action="{% url 'logout' %}" method="post" class="inline">
-                        {% csrf_token %}
-                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300">
-                            Cerrar Sesión
+            <div id="mobile-menu" class="hidden absolute top-full left-0 w-full bg-indigo-700 sm:relative sm:top-auto sm:left-auto sm:w-auto sm:block z-50">
+                <div class="flex flex-col sm:flex-row items-center sm:space-x-6 space-y-4 sm:space-y-0 py-4 sm:py-0 px-6 sm:px-0">
+                    {% if user.is_authenticated %}
+                        <span class="text-indigo-200">Hola, {{ user.username }}</span>
+                        <form action="{% url 'logout' %}" method="post" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 w-full sm:w-auto text-center">
+                                Cerrar Sesión
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 w-full sm:w-auto text-center">
+                            Iniciar Sesión
+                        </a>
+                        <a href="{% url 'register' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300 w-full sm:w-auto text-center">
+                            Registrarse
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'home' %}" class="font-medium hover:text-indigo-200 transition duration-300 w-full sm:w-auto text-center py-2">Inicio</a>
+                    <a href="{% url 'members:member_list' %}" class="font-medium hover:text-indigo-200 transition duration-300 w-full sm:w-auto text-center py-2">Volver a la lista</a>
+                    <form action="{% url 'search' %}" method="get" class="relative w-full sm:w-auto">
+                        <input type="search" name="q" placeholder="Buscar..." class="py-2 px-4 rounded-full text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 w-full">
+                        <button type="submit" class="absolute right-0 top-0 mt-2 mr-4 text-indigo-800 hover:text-indigo-600 font-semibold">
+                            🔍
                         </button>
                     </form>
-                {% else %}
-                    <a href="{% url 'login' %}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300">
-                        Iniciar Sesión
-                    </a>
-                    <a href="{% url 'register' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-md transition duration-300">
-                        Registrarse
-                    </a>
-                {% endif %}
-
-                <a href="{% url 'home' %}" class="font-medium hover:text-indigo-200 transition duration-300">Inicio</a>
-                
-                <a href="{% url 'members:member_list' %}" class="font-medium hover:text-indigo-200 transition duration-300">Volver a la lista</a>
-
-                <a href="{% url 'story_list' %}" class="font-medium hover:text-indigo-200 transition duration-300">Historias</a>
-                <a href="{% url 'photo_list' %}" class="font-medium hover:text-indigo-200 transition duration-300">Fotos</a>
-
+                </div>
             </div>
-            <form action="{% url 'search' %}" method="get" class="flex items-center space-x-2 bg-white rounded-full px-4 py-1 shadow-md">
-                <input type="text" name="q" placeholder="Buscar en el sitio..." class="w-40 sm:w-64 bg-transparent outline-none text-gray-800 placeholder-gray-400" />
-                <button type="submit" class="text-indigo-600 hover:text-indigo-800 font-semibold">
-                🔍
-                </button>
-            </form>
         </nav>
     </header>
 
@@ -92,21 +84,22 @@
             <p>&copy; 2025 Familia Bidart. Todos los derechos reservados.</p>
         </div>
     </footer>
-<!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-
 <script>
-  // Activar flatpickr en todos los inputs de tipo date
-document.addEventListener("DOMContentLoaded", function() {
-    flatpickr("input[type='date']", {
-    dateFormat: "Y-m-d",
-      maxDate: "today",  // No permite fechas futuras
-    altInput: true,
-    altFormat: "Y-m-d",
-    allowInput: true
-    });
-});
-</script>
+    // Script para el menú hamburguesa
+    document.addEventListener('DOMContentLoaded', () => {
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
 
+        if (menuToggle && mobileMenu) {
+            menuToggle.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                // Alternar entre flex-col y hidden para controlar la visibilidad y el layout en móvil
+                mobileMenu.classList.toggle('flex'); 
+                mobileMenu.classList.toggle('flex-col');
+            });
+        }
+    });
+</script>
 </body>
 </html>

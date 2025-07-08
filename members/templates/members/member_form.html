@@ -12,7 +12,7 @@
         {{ form.non_field_errors }}
 
         <div class="border-b mb-4">
-            <nav class="flex space-x-2" id="tabs">
+            <nav class="flex space-x-2 overflow-x-auto whitespace-nowrap" id="tabs">
                 {% for tab in tabs %}
                 <button type="button" class="tab-btn py-2 px-4 text-sm text-gray-600 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 {% if forloop.first %}active border-blue-600 text-blue-600{% endif %}" data-tab="{{ tab }}">{{ tab|capfirst }}</button>
                 {% endfor %}
@@ -20,12 +20,31 @@
         </div>
 
         <div id="tab-content" class="space-y-6">
-            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4" id="info">
-                {% for field_name in info_fields %}
-                    {# Ahora, este filtro 'get_form_field' será reconocido por Django #}
-                    {% with field=form|get_form_field:field_name %}
-                    {% if field %}
-                        <div>
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4 active">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name in tab_fields.DatosPersonales %}
+                        <div class="{% if field_name == 'first_name' or field_name == 'last_name_paterno' or field_name == 'last_name_materno' %}md:col-span-1{% else %}md:col-span-1{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">
+                                    {% for error in field.errors %}
+                                        {{ error|striptags }}
+                                    {% endfor %}
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+            
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name in tab_fields.RelacionesFamiliares %}
+                        <div class="md:col-span-1">
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
                             {{ field }}
                             {% if field.errors %}
@@ -37,11 +56,11 @@
                 {% endfor %}
             </div>
 
-            <div class="tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-4" id="contacto">
-                {% for field_name in contacto_fields %}
-                    {% with field=form|get_form_field:field_name %}
-                    {% if field %}
-                        <div>
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name in tab_fields.Contacto %}
+                        <div class="md:col-span-1">
                             <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
                             {{ field }}
                             {% if field.errors %}
@@ -53,12 +72,12 @@
                 {% endfor %}
             </div>
 
-            <div class="tab-panel hidden grid grid-cols-1 md:grid-cols-2 gap-4" id="redes">
-                {% for field_name in redes_fields %}
-                    {% with field=form|get_form_field:field_name %}
-                    {% if field %}
-                        <div>
-                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+            <div class="tab-panel hidden">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name == 'foto_principal' %}
+                        <div class="mb-4">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">Foto Principal</label>
                             {{ field }}
                             {% if field.errors %}
                                 <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
@@ -70,9 +89,9 @@
             </div>
         </div>
 
-        <div class="flex justify-between mt-8">
-            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg">Cancelar</a>
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg">Guardar</button>
+        <div class="flex flex-col sm:flex-row justify-between mt-8 space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg text-center w-full sm:w-auto">Cancelar</a>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg text-center w-full sm:w-auto">Guardar</button>
         </div>
     </form>
 </div>
@@ -89,9 +108,21 @@ document.addEventListener("DOMContentLoaded", function () {
             button.classList.add("active", "border-blue-600", "text-blue-600");
 
             panels.forEach(panel => panel.classList.add("hidden"));
-            document.getElementById(button.dataset.tab).classList.remove("hidden");
+            document.querySelector(`.tab-panel[data-tab="${button.dataset.tab}"]`).classList.remove("hidden");
         });
     });
+
+    // Initialize Flatpickr for date fields
+    flatpickr("input[type=date]", {
+        dateFormat: "Y-m-d", // Format matching Django's DateField
+        altInput: true,
+        altFormat: "d-m-Y",
+        locale: "es", // Ensure Spanish localization if available
+    });
+
+    // Set initial active tab (e.g., the first one)
+    if (buttons.length > 0) {
+        buttons[0].click(); // Simulate click on the first button to show its panel
+    }
 });
 </script>
-{% endblock %}
