@@ -3,13 +3,11 @@
 {% load static %}
 {% load i18n %}
 
-
-
 {% block title %} - Inicio{% endblock %}
 {% block page_title %}LOS BIDART - Bienvenido!!{% endblock %}
 
 {% block content %}
-<section class="text-center bg-white p-8 md:p-12 lg:p-16 rounded-xl shadow-lg max-w-4xl mx-auto w-full">
+<section class="text-center bg-white p-8 md:p-12 lg:p-16 rounded-xl shadow-lg max-w-4xl mx-auto w-full transition-shadow hover:shadow-xl">
     <p class="text-lg md:text-xl text-gray-600 mb-8">
         Organiza y consulta fácilmente la información de los Integrantes de la familia, comparte historias y sube fotos.
     </p>
@@ -17,10 +15,12 @@
         <a href="{% url 'members:member_list' %}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105">
             Ver Miembros
         </a>
+        
         <a href="{% url 'story_list' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105">
             Leer Historias
         </a>
-        <a href="{% url 'photo_list' %}" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105">
+
+        <a href="{% url 'photos:photo_list' %}" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:scale-105">
             Ver Fotos
         </a>
     </div>
@@ -28,49 +28,66 @@
 
 <section class="mt-12 text-center">
     <h2 class="text-3xl font-bold text-gray-800 mb-8">Características Principales</h2>
+    
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <div class="bg-white p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+        
+        <div class="bg-white p-6 rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg flex flex-col items-center">
             <div class="text-indigo-500 mb-4 text-4xl">👨‍👩‍👧‍👦</div>
             <h3 class="text-xl font-semibold text-gray-800 mb-2">Árbol Familiar Interactivo</h3>
-            <p class="text-gray-600">
+            <p class="text-gray-600 text-sm mt-auto">
                 Visualiza las conexiones entre los miembros de la familia de forma intuitiva.
             </p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+
+        <div class="bg-white p-6 rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg flex flex-col items-center">
             <div class="text-indigo-500 mb-4 text-4xl">📜</div>
             <h3 class="text-xl font-semibold text-gray-800 mb-2">Historias y Recuerdos</h3>
-            <p class="text-gray-600">
+            <p class="text-gray-600 text-sm mt-auto">
                 Comparte anécdotas y momentos importantes de tu familia.
             </p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+
+        <div class="bg-white p-6 rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg flex flex-col items-center">
             <div class="text-indigo-500 mb-4 text-4xl">📸</div>
             <h3 class="text-xl font-semibold text-gray-800 mb-2">Galería de Fotos</h3>
-            <p class="text-gray-600">
+            <p class="text-gray-600 text-sm mt-auto">
                 Sube y organiza tus fotos familiares con descripciones y comentarios.
             </p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+
+        <div class="bg-white p-6 rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg flex flex-col items-center">
+            <div class="w-12 h-12 mb-4 flex items-center justify-center bg-blue-100 rounded-full text-blue-600">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-800 mb-2">Los Bidart Solari</h3>
+            <p class="text-gray-600 text-sm mb-4 text-center">Únete a nuestro grupo privado en Facebook para compartir con toda la familia.</p>
+            
+            <a href="https://www.facebook.com/groups/426256090909109/" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               class="mt-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow transition-colors w-full text-center text-sm">
+                Ir al Grupo
+            </a>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg flex flex-col items-center">
             <div class="text-indigo-500 mb-4 text-4xl">🔒</div>
             <h3 class="text-xl font-semibold text-gray-800 mb-2">Acceso Seguro</h3>
-            <p class="text-gray-600">
+            <p class="text-gray-600 text-sm mt-auto">
                 Solo los miembros registrados pueden acceder y contribuir al contenido.
             </p>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
-            <div class="text-indigo-500 mb-4 text-4xl">✨</div>
-            <h3 class="text-xl font-semibold text-gray-800 mb-2">Fácil de Usar</h3>
-            <p class="text-gray-600">
-                Interfaz intuitiva para gestionar y explorar la información familiar.
-            </p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md transition-transform duration-300 hover:scale-105 hover:shadow-lg">
+
+        <div class="bg-white p-6 rounded-xl shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg flex flex-col items-center">
             <div class="text-indigo-500 mb-4 text-4xl">📱</div>
             <h3 class="text-xl font-semibold text-gray-800 mb-2">Diseño Responsivo</h3>
-            <p class="text-gray-600">
-                Accede a tu árbol familiar desde cualquier dispositivo: móvil, tablet o desktop.
+            <p class="text-gray-600 text-sm mt-auto">
+                Accede a tu árbol familiar desde cualquier dispositivo: móvil o desktop.
             </p>
         </div>
+
     </div>
 </section>
 {% endblock %}

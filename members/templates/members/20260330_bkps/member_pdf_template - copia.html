@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+        }
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #333;
+            line-height: 1.5;
+        }
+        .page-break { page-break-after: always; }
+        
+        /* Header Principal */
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            border-bottom: 3px solid #4f46e5; 
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .perfil-bloque {
+            display: flex;
+            flex-direction: row; /* Asegura alineación horizontal en WeasyPrint */
+            gap: 20px;
+        }
+        .foto-perfil { 
+            width: 140px; 
+            height: 140px; 
+            object-fit: cover; 
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .foto-placeholder {
+            width: 140px;
+            height: 140px;
+            background: #f3f4f6;
+            color: #9ca3af;
+            text-align: center;
+            line-height: 140px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px dashed #d1d5db;
+        }
+        
+        .header-info h1 {
+            margin: 0;
+            font-size: 26px;
+            color: #111827;
+        }
+        .header-info .apodo {
+            margin: 4px 0;
+            color: #6366f1;
+            font-style: italic;
+            font-size: 18px;
+        }
+        .header-info .parentesco {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .qr-code { width: 90px; height: 90px; }
+
+        /* Secciones de Datos */
+        section { margin-bottom: 25px; }
+        h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #4f46e5;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 12px;
+        }
+        .info-grid {
+            display: block; /* Mejor compatibilidad que grid en algunos PDF engines */
+        }
+        .info-item {
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        strong { color: #4b5563; min-width: 120px; display: inline-block; }
+
+        /* Contenedor del Árbol */
+        .tree-container { text-align: center; margin-top: 20px; }
+        .tree-svg { width: 100%; border: 1px solid #f0f0f0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="ficha-tecnica page-break">
+        <div class="header">
+            <div class="perfil-bloque">
+                {% if member.foto_principal %}
+                    <img src="{{ MY_DOMAIN }}{{ member.foto_principal.url }}" class="foto-perfil">
+                {% else %}
+                    <div class="foto-placeholder">SIN FOTO</div>
+                {% endif %}
+                
+                <div class="header-info">
+                    <h1>{{ member.first_name }} {{ member.last_name_paterno }}</h1>
+                    {% if member.apodo %}
+                        <p class="apodo">"{{ member.apodo }}"</p>
+                    {% endif %}
+                    <p class="parentesco">
+                        {{ member.get_relationship_display|default:"Miembro Familiar" }}
+                    </p>
+                </div>
+            </div>
+
+            {% if member.qr_code %}
+                <img src="{{ MY_DOMAIN }}{{ member.qr_code.url }}" class="qr-code">
+            {% endif %}
+        </div>
+
+        <section>
+            <h3>Datos Biográficos</h3>
+            <div class="info-grid">
+                <div class="info-item"><strong>Nacimiento:</strong> {{ member.birth_date|date:"d \d\e F, Y"|default:"No registrado" }}</div>
+                <div class="info-item"><strong>Lugar:</strong> {{ member.lugar_nacimiento|default:"No especificado" }}</div>
+                
+                <div class="info-item">
+                    <strong>
+                        {% if member.death_date %}
+                            Edad al fallecer:
+                        {% else %}
+                            Edad actual:
+                        {% endif %}
+                    </strong> 
+                    {{ member.edad }} años
+                </div>
+               
+                <div class="info-item"><strong>Ocupación:</strong> {{ member.ocupacion|default:"-" }}</div>
+                {% if member.death_date %}
+                    <div class="info-item" style="color: #b91c1c;"><strong>Fallecimiento:</strong> {{ member.death_date|date:"d \d\e F, Y" }}</div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section>
+            <h3>Ascendencia y Pareja</h3>
+            <div class="info-item"><strong>Padre:</strong> {{ member.padre|default:"No registrado" }}</div>
+            <div class="info-item"><strong>Madre:</strong> {{ member.madre|default:"No registrado" }}</div>
+            <div class="info-item"><strong>Cónyuge:</strong> {{ member.conyuge|default:"No registrado" }}</div>
+        </section>
+
+        <section>
+            <h3>Hermanos y Descendencia</h3>
+            <div class="info-item"><strong>Hermanos:</strong> 
+                {% for sibling in siblings %}
+                    {{ sibling.first_name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    <span style="color: #9ca3af;">No registrados</span>
+                {% endfor %}
+            </div>
+            <div class="info-item"><strong>Hijos:</strong> 
+                {% for hijo in member.hijos_padre.all %}
+                    {{ hijo.first_name }}{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    {% for hijo in member.hijos_madre.all %}
+                        {{ hijo.first_name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        <span style="color: #9ca3af;">No registrados</span>
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </section>
+
+        {% if member.biografia %}
+        <section>
+            <h3>Historia Personal</h3>
+            <p style="text-align: justify; font-size: 12px; color: #4b5563;">{{ member.biografia|linebreaksbr }}</p>
+        </section>
+        {% endif %}
+    </div>
+
+    <div class="tree-container">
+        <h3 style="text-align: center; border: none; margin-bottom: 20px;">Esquema Genealógico: {{ member.first_name }}</h3>
+        <div class="tree-svg">
+             {% include "members/includes/tree_svg_minimal.html" %}
+        </div>
+        <p style="font-size: 10px; color: #9ca3af; margin-top: 15px;">Documento generado automáticamente por el Sistema de Gestión Familiar.</p>
+    </div>
+</body>
+</html>

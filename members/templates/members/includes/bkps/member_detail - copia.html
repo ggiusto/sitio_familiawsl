@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% load member_extras %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md">
+
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">
+                {{ member.first_name }} {{ member.last_name_paterno }} {{ member.last_name_materno }}
+            </h1>
+            {% if member.fallecimiento_date %}
+                <p class="text-gray-600">Nacido el {{ member.birth_date|date:"d-m-Y" }} - Fallecido el {{ member.fallecimiento_date|date:"d-m-Y" }}</p>
+            {% elif member.birth_date %}
+                <p class="text-gray-600">Nacido el {{ member.birth_date|date:"d-m-Y" }}</p>
+            {% endif %}
+        </div>
+
+        <div class="flex justify-center mb-6">
+            {% if member.foto_principal %}
+                <img src="{{ member.foto_principal.url }}" alt="{{ member.first_name }}" class="w-32 h-32 rounded-full object-cover shadow">
+            {% else %}
+                <div class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-6xl">
+                    <svg class="w-24 h-24 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M24 20.993V24H0v-2.996h-.001zm0 3.006V24H0v-.001h24zM12 0C7.03 0 3 4.03 3 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"/>
+                    </svg>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="border-b mb-4">
+            <nav role="tablist" class="-mb-px flex space-x-6 overflow-x-auto whitespace-nowrap" id="tabs">
+                <button type="button" class="tab-btn py-2 px-4 text-sm text-gray-600 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 active border-blue-600 text-blue-600" data-tab="datos-personales">Datos Personales</button>
+                <button type="button" class="tab-btn py-2 px-4 text-sm text-gray-600 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600" data-tab="contacto">Contacto</button>
+                <button type="button" class="tab-btn py-2 px-4 text-sm text-gray-600 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600" data-tab="arbol-genealogico">Árbol Genealógico</button>
+            </nav>
+        </div>
+
+        <div id="tab-content" class="space-y-6">
+            <div class="tab-panel active" data-tab="datos-personales">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Información General</h3>
+                <ul class="space-y-2 text-gray-700">
+                    {% for field in general_info_fields %}
+                        <li><strong>{{ field.verbose_name }}:</strong>
+                            {% if field.get_internal_type == 'DateField' %}
+                                {{ member|get_member_field:field.name|date:"d-m-Y"|default:"No registrado" }}
+                            {% elif field.get_internal_type == 'URLField' %}
+                                {% if member|get_member_field:field.name %}
+                                    <a href="{{ member|get_member_field:field.name }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{{ member|get_member_field:field.name }}</a>
+                                {% else %}
+                                    No registrado
+                                {% endif %}
+                            {% elif field.name == 'relationship' %}
+                                {{ member.get_relationship_display|default:"No registrado" }}
+                            {% else %}
+                                {{ member|get_member_field:field.name|default:"No registrado" }}
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Relaciones Familiares</h3>
+                <ul class="space-y-2 text-gray-700">
+                    <li><strong>Padre:</strong>
+                        {% if padre_obj %}
+                            <a href="{% url 'members:member_detail' padre_obj.pk %}" class="text-blue-600 hover:underline">{{ padre_obj.first_name }} {{ padre_obj.last_name_paterno }}</a>
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </li>
+                    <li><strong>Madre:</strong>
+                        {% if madre_obj %}
+                            <a href="{% url 'members:member_detail' madre_obj.pk %}" class="text-blue-600 hover:underline">{{ madre_obj.first_name }} {{ madre_obj.last_name_paterno }}</a>
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </li>
+                    <li><strong>Cónyuge:</strong>
+                        {% if conyuge_obj %}
+                            <a href="{% url 'members:member_detail' conyuge_obj.pk %}" class="text-blue-600 hover:underline">{{ conyuge_obj.first_name }} {{ conyuge_obj.last_name_paterno }}</a>
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </li>
+                    <li><strong>Padrino de Bautismo:</strong> {{ padrino_bautismo_val|default:"No registrado" }}</li>
+                    <li><strong>Madrina de Bautismo:</strong> {{ madrina_bautismo_val|default:"No registrado" }}</li>
+                </ul>
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Hermanos</h3>
+                {% if hermanos %}
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        {% for hermano in hermanos %}
+                            <li><a href="{% url 'members:member_detail' hermano.pk %}" class="text-blue-600 hover:underline">{{ hermano.first_name }} {{ hermano.last_name_paterno }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-700">No se han registrado hermanos.</p>
+                {% endif %}
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Hijos</h3>
+                {% if hijos %}
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        {% for hijo in hijos %}
+                            <li><a href="{% url 'members:member_detail' hijo.pk %}" class="text-blue-600 hover:underline">{{ hijo.first_name }} {{ hijo.last_name_paterno }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-700">No se han registrado hijos.</p>
+                {% endif %}
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Nietos</h3>
+                {% if nietos %}
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        {% for nieto in nietos %}
+                            <li><a href="{% url 'members:member_detail' nieto.pk %}" class="text-blue-600 hover:underline">{{ nieto.first_name }} {{ nieto.last_name_paterno }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-700">No se han registrado nietos.</p>
+                {% endif %}
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Bisnietos</h3>
+                {% if bisnietos %}
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        {% for bisnieto in bisnietos %}
+                            <li><a href="{% url 'members:member_detail' bisnieto.pk %}" class="text-blue-600 hover:underline">{{ bisnieto.first_name }} {{ bisnieto.last_name_paterno }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-700">No se han registrado bisnietos.</p>
+                {% endif %}
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Tataranietos</h3>
+                {% if tataranietos %}
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        {% for tataranieto in tataranietos %}
+                            <li><a href="{% url 'members:member_detail' tataranieto.pk %}" class="text-blue-600 hover:underline">{{ tataranieto.first_name }} {{ tataranieto.last_name_paterno }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-700">No se han registrado tataranietos.</p>
+                {% endif %}
+
+                <h3 class="text-xl font-semibold mt-6 mb-3 text-gray-800">Choznos</h3>
+                {% if choznos %}
+                    <ul class="list-disc list-inside ml-4 space-y-1">
+                        {% for chozno in choznos %}
+                            <li><a href="{% url 'members:member_detail' chozno.pk %}" class="text-blue-600 hover:underline">{{ chozno.first_name }} {{ chozno.last_name_paterno }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-700">No se han registrado choznos.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-panel hidden" data-tab="contacto">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Información de Contacto</h3>
+                <ul class="space-y-2 text-gray-700">
+                    <li><strong>Email:</strong> <a href="mailto:{{ member.correomail }}" class="text-blue-600 hover:underline">{{ member.correomail|default:"No registrado" }}</a></li>
+                    <li><strong>Teléfono:</strong> <a href="tel:{{ member.phone_number }}" class="text-blue-600 hover:underline">{{ member.phone_number|default:"No registrado" }}</a></li>
+                    <li><strong>Dirección:</strong> {{ member.address|default:"No registrado" }}</li>
+                    <li><strong>WhatsApp:</strong> <a href="https://wa.me/{{ member.whatsapp }}" target="_blank" class="text-blue-600 hover:underline">{{ member.whatsapp|default:"No registrado" }}</a></li>
+                    <li><strong>Facebook:</strong>
+                        {% if member.facebook %}
+                            <a href="{{ member.facebook }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{{ member.facebook }}</a>
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </li>
+                    <li><strong>LinkedIn:</strong>
+                        {% if member.linkedin %}
+                            <a href="{{ member.linkedin }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">{{ member.linkedin }}</a>
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </li>
+                    <li><strong>Instagram:</strong>
+                        {% if member.instagram %}
+                            <a href="https://instagram.com/{{ member.instagram|cut:'@' }}" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">@{{ member.instagram }}</a>
+                        {% else %}
+                            No registrado
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-panel hidden" data-tab="arbol-genealogico">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Árbol Genealógico</h3>
+                <div class="w-full h-[600px] relative overflow-auto border border-gray-300 rounded-lg shadow-inner bg-gray-100">
+                    <svg id="family-tree-svg" class="w-full h-full"></svg>
+                    <div id="tooltip" class="absolute bg-gray-800 text-white p-2 rounded-md shadow-lg hidden"></div>
+                </div>
+                <div class="button-container flex gap-4 mt-4 justify-center">
+                    <button id="reset-view-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow transition duration-300">Reiniciar Vista</button>
+                    <button id="zoom-in-btn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow transition duration-300">Zoom +</button>
+                    <button id="zoom-out-btn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg shadow transition duration-300">Zoom -</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex flex-col sm:flex-row justify-between space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="{% url 'members:member_update' member.pk %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow text-center w-full sm:w-auto">Editar</a>
+            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg shadow text-center w-full sm:w-auto">Volver</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // --- Tab Functionality ---
+        const buttons = document.querySelectorAll(".tab-btn");
+        const panels = document.querySelectorAll(".tab-panel");
+
+        buttons.forEach(button => {
+            button.addEventListener("click", () => {
+                buttons.forEach(btn => btn.classList.remove("active", "border-blue-600", "text-blue-600"));
+                button.classList.add("active", "border-blue-600", "text-blue-600");
+
+                panels.forEach(panel => panel.classList.add("hidden"));
+                document.querySelector(`.tab-panel[data-tab="${button.dataset.tab}"]`).classList.remove("hidden");
+
+                if (button.dataset.tab === 'arbol-genealogico' && !window.familyTreeInitialized) {
+                    initializeFamilyTree();
+                    window.familyTreeInitialized = true;
+                }
+            });
+        });
+
+        // Initialize the first tab as active
+        const firstTabBtn = document.querySelector(".tab-btn[data-tab='datos-personales']");
+        const firstTabPanel = document.querySelector(".tab-panel[data-tab='datos-personales']");
+        if (firstTabBtn && firstTabPanel) {
+            firstTabBtn.classList.add("active", "border-blue-600", "text-blue-600");
+            firstTabPanel.classList.remove("hidden");
+        }
+
+        // --- Family Tree Functionality ---
+        let svg, g, zoom, treeLayout, root, link, node, tooltip;
+        const nodeWidth = 180;
+        const nodeHeight = 100;
+        const horizontalSeparation = 20;
+        const verticalSeparation = 100;
+
+        let isDragging = false;
+        let isZooming = false;
+
+        function initializeFamilyTree() {
+            d3.select("#family-tree-svg").selectAll("*").remove();
+            svg = d3.select("#family-tree-svg").attr("width", "100%").attr("height", "100%");
+            g = svg.append("g");
+            tooltip = d3.select("#tooltip");
+
+            zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", (event) => {
+                    isZooming = true;
+                    g.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+
+            const memberId = "{{ member.pk }}";
+            d3.json(`/members/${memberId}/family-tree-data/`).then(data => {
+                if (!data) return;
+
+                treeLayout = d3.tree().nodeSize([nodeWidth + horizontalSeparation, nodeHeight + verticalSeparation]);
+                root = d3.hierarchy(data);
+                treeLayout(root);
+
+                root.descendants().reverse().forEach(d => {
+                    if (d.children) {
+                        d.children.forEach(child => {
+                            child.y = d.y + (nodeHeight + verticalSeparation);
+                        });
+                    }
+                });
+
+                const initialTransform = d3.zoomIdentity
+                    .translate(svg.node().clientWidth / 2, 50)
+                    .scale(0.8);
+                svg.call(zoom.transform, initialTransform);
+
+                link = g.selectAll(".link")
+                    .data(root.links())
+                    .enter().append("path")
+                    .attr("class", "link")
+                    .attr("fill", "none")
+                    .attr("stroke", "#ccc")
+                    .attr("stroke-width", 2)
+                    .attr("d", d3.linkVertical()
+                        .x(d => d.x)
+                        .y(d => d.y));
+
+                node = g.selectAll(".node")
+                    .data(root.descendants())
+                    .enter().append("g")
+                    .attr("class", "node")
+                    .attr("transform", d => `translate(${d.x - nodeWidth / 2}, ${d.y - nodeHeight / 2})`)
+                    .on("mouseover", function(event, d) {
+                        if (!isDragging && !isZooming) {
+                            tooltip.html(`
+                                <strong>${d.data.name}</strong><br>
+                                ${d.data.birth_date ? `Nac: ${d.data.birth_date}` : ''}
+                                ${d.data.fallecimiento_date ? ` - Fall: ${d.data.fallecimiento_date}` : ''}
+                                <br><span style="font-size:0.8em">Click para ver detalles</span>
+                            `)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY - 28) + "px")
+                            .style("display", "block")
+                            .style("opacity", 1);
+                        }
+                    })
+                    .on("mouseout", () => {
+                        tooltip.style("display", "none").style("opacity", 0);
+                        isDragging = false;
+                        isZooming = false;
+                    })
+                    .on("click", function(event, d) {
+                        if (d.data.id && !isDragging && !isZooming) {
+                            window.location.href = `/members/${d.data.id}/`;
+                        }
+                    });
+
+                node.append("rect")
+                    .attr("width", nodeWidth)
+                    .attr("height", nodeHeight)
+                    .attr("fill", d => d.data.is_current ? "#6366F1" : "#A78BFA")
+                    .attr("stroke", "#5B21B6")
+                    .attr("stroke-width", 2)
+                    .attr("rx", 10);
+
+                node.append("text")
+                    .attr("x", nodeWidth / 2)
+                    .attr("y", nodeHeight / 2)
+                    .attr("text-anchor", "middle")
+                    .attr("fill", "white")
+                    .style("font-weight", "bold")
+                    .text(d => d.data.name);
+
+                // --- Botones de Control de Zoom ---
+                document.getElementById("reset-view-btn").onclick = () => svg.transition().call(zoom.transform, initialTransform);
+                document.getElementById("zoom-in-btn").onclick = () => svg.transition().call(zoom.scaleBy, 1.2);
+                document.getElementById("zoom-out-btn").onclick = () => svg.transition().call(zoom.scaleBy, 0.8);
+            });
+        }
+    });
+</script>
+{% endblock %}

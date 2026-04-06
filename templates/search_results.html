@@ -12,7 +12,7 @@
             <ul class="space-y-2">
                 {% for member in results %}
                     <li>
-                        <a href="{% url 'members:member_detail' member.pk %}" class="text-lg text-indigo-600 hover:underline">
+                        <a href="{% url 'members:member_detail' member.pk %}?edit=1" class="text-lg text-indigo-600 hover:underline">
                             {{ member.first_name }} {{ member.last_name_paterno }} {{ member.last_name_materno }}
                         </a>
                     </li>
@@ -25,7 +25,7 @@
         <section>
             <h2 class="text-2xl font-semibold text-blue-700 mb-4">Historias</h2>
             <ul class="space-y-2">
-                {% for story in stories %}\
+                {% for story in stories %}
                     <li>
                         <a href="{% url 'story_detail' story.pk %}" class="text-lg text-blue-600 hover:underline">
                             {{ story.title }}

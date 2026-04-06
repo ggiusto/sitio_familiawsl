@@ -1,0 +1,27 @@
+# Entornos virtuales (los que veo en tu captura)
+venv/
+venv_windows/
+env/
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django
+db.sqlite3
+/staticfiles/
+/media/
+/photos/
+
+# Archivos temporales o de prueba que aparecen en tu lista
+test_db.txt
+test_db.txtpython
+pectdb*
+*.csv
+
+# Sistema
+.DS_Store
+Thumbs.db

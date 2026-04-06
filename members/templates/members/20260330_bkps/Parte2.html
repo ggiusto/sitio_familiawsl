@@ -1,0 +1,189 @@
+{% if nietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Nietos ({{ nietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for nieto in nietos %}
+                                                <a href="{% url 'members:member_detail' nieto.pk %}" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors">
+                                                    {{ nieto.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if bisnietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Bisnietos ({{ bisnietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for b in bisnietos %}
+                                                <a href="{% url 'members:member_detail' b.pk %}" class="px-2 py-1 bg-orange-50 text-orange-700 rounded text-xs border border-orange-100 hover:bg-orange-100 transition-colors">
+                                                    {{ b.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div> 
+            </div> 
+        </div> 
+        
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 mb-20">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <span class="w-3 h-8 bg-indigo-600 rounded-full"></span>
+                Árbol Genealógico Interactivo
+            </h3>
+            <div id="tree-container" class="w-full h-[600px] bg-slate-50 rounded-2xl overflow-hidden cursor-move border border-gray-100 shadow-inner">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const treeData = {{ family_data_json|safe }};
+        const container = document.getElementById('tree-container');
+        
+        if (!treeData || Object.keys(treeData).length === 0) return;
+
+        const isMobile = window.innerWidth < 768;
+        const width = isMobile ? 800 : 1600; 
+        const height = 800; 
+        const offsetConyuge = 60;
+
+        const svg = d3.select("#tree-container")
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", height)
+            .attr("viewBox", `0 0 ${width} ${height}`)
+            .call(d3.zoom().scaleExtent([0.2, 3]).on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            }));
+
+        const g = svg.append("g").attr("transform", "translate(80,0)");
+
+        const treeLayout = d3.tree().nodeSize([120, 320]);
+        const root = d3.hierarchy(treeData);
+        treeLayout(root);
+
+        // Enlaces
+        g.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("fill", "none")
+            .attr("stroke", "#cbd5e1")
+            .attr("stroke-width", 2)
+            .attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+        // Nodos
+        const node = g.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", d => "node " + (d.children ? " node--internal" : " node--leaf"))
+            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .style("cursor", "pointer");
+
+        node.on("click", (event, d) => {
+            const isConyugeClick = event.target.closest(".conyuge-group");
+            if (isConyugeClick && d.data.conyuge_pk) {
+                window.location.href = `/members/${d.data.conyuge_pk}/`;
+            } else if (d.data.pk) {
+                window.location.href = `/members/${d.data.pk}/`;
+            }
+        });
+
+        // Titular
+        node.append("circle")
+            .attr("r", 26).attr("fill", "#fff")
+            .attr("stroke", d => ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"][d.depth] || "#6b7280")
+            .attr("stroke-width", 3);
+
+        node.append("clipPath")
+            .attr("id", d => "clip-" + d.data.pk)
+            .append("circle").attr("cx", 0).attr("cy", 0).attr("r", 23);
+
+        node.append("image")
+            .attr("xlink:href", d => d.data.foto ? d.data.foto : "https://ui-avatars.com/api/?name=" + d.data.name)
+            .attr("x", -23).attr("y", -23).attr("width", 46).attr("height", 46)
+            .attr("clip-path", d => `url(#clip-${d.data.pk})`);
+
+        // Cónyuge
+        const conyugeGroup = node.append("g")
+            .attr("class", "conyuge-group")
+            .filter(d => d.data.conyuge_pk);
+
+        conyugeGroup.append("circle")
+            .attr("cx", offsetConyuge).attr("r", 26).attr("fill", "#fff")
+            .attr("stroke", "#db2777").attr("stroke-width", 3);
+
+        conyugeGroup.append("clipPath")
+            .attr("id", d => "clip-conyuge-" + d.data.conyuge_pk)
+            .append("circle").attr("cx", offsetConyuge).attr("cy", 0).attr("r", 23);
+
+        conyugeGroup.append("image")
+            .attr("xlink:href", d => d.data.conyuge_foto ? d.data.conyuge_foto : "https://ui-avatars.com/api/?name=" + d.data.conyuge_nombre)
+            .attr("x", offsetConyuge - 23).attr("y", -23).attr("width", 46).attr("height", 46)
+            .attr("clip-path", d => `url(#clip-conyuge-${d.data.conyuge_pk})`);
+
+        // Textos
+        node.append("text")
+            .attr("dy", "3.2em").attr("x", 0).attr("text-anchor", "middle")
+            .text(d => d.data.name)
+            .attr("class", "text-xs font-bold fill-gray-800")
+            .style("paint-order", "stroke").style("stroke", "#fff").style("stroke-width", "3px");
+
+        node.append("text")
+            .attr("dy", "4.4em").attr("x", 0).attr("text-anchor", "middle")
+            .text(d => d.data.last_name)
+            .attr("class", "text-[10px] fill-gray-500 uppercase tracking-tighter");
+
+        conyugeGroup.append("text")
+            .attr("dy", "3.2em").attr("x", offsetConyuge).attr("text-anchor", "middle")
+            .text(d => d.data.conyuge_nombre)
+            .attr("class", "text-xs font-bold fill-pink-700")
+            .style("paint-order", "stroke").style("stroke", "#fff").style("stroke-width", "3px");
+    });
+
+    let originalViewBox = "";
+
+    function prepararEImprimir() {
+        const guide = document.getElementById('print-guide');
+        if (guide) guide.classList.remove('hidden');
+        const svgElement = document.querySelector("#tree-container svg");
+        if (svgElement) {
+            originalViewBox = svgElement.getAttribute("viewBox");
+            const bbox = svgElement.getBBox();
+            const padding = 50;
+            const newViewBox = `${bbox.x - padding/2} ${bbox.y - padding/2} ${bbox.width + padding} ${bbox.height + padding}`;
+            svgElement.setAttribute("viewBox", newViewBox);
+        }
+    }
+
+    function ejecutarImpresion() {
+        const guide = document.getElementById('print-guide');
+        if (guide) guide.classList.add('hidden');
+        setTimeout(() => {
+            window.print();
+            const svgElement = document.querySelector("#tree-container svg");
+            if (svgElement && originalViewBox) {
+                svgElement.setAttribute("viewBox", originalViewBox);
+            }
+        }, 300);
+    }
+</script>
+
+<style>
+    .node:hover circle { stroke-width: 5px; transition: all 0.2s; }
+    @media print {
+        @page { size: A4 landscape; margin: 0; }
+        body * { visibility: hidden; }
+        #tree-container, #tree-container * { visibility: visible; }
+        #tree-container { position: absolute; left: 0; top: 0; width: 100% !important; border: none !important; }
+    }
+</style>
+{% endblock %}

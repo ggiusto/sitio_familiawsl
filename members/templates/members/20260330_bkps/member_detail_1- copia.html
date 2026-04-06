@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10">
+    <div class="max-w-5xl mx-auto px-4">
+        
+        <div class="flex justify-between items-center mb-6">
+            <a href="{% url 'members:member_list' %}" class="text-indigo-600 hover:text-indigo-800 flex items-center gap-2 font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Volver al Directorio
+            </a>
+            <div class="flex gap-3">
+                <a href="{% url 'members:member_update' member.pk %}" 
+                    class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-bold text-sm shadow-sm transition-all">
+                    Editar Perfil
+                </a>
+                </div>
+                </a>
+                <a href="{% url 'members:export_pdf' member.pk %}" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+                    Descargar PDF
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 mb-8">
+            <div class="md:flex">
+                <div class="md:w-1/3 bg-indigo-900 p-8 text-center flex flex-col items-center justify-center">
+                    <div class="relative mb-6">
+                        {% if member.foto_principal %}
+                            <img src="{{ member.foto_principal.url }}" class="w-48 h-48 rounded-2xl object-cover border-4 border-white/20 shadow-2xl">
+                        {% else %}
+                            <div class="w-48 h-48 rounded-2xl bg-indigo-800 flex items-center justify-center text-white text-6xl font-bold border-4 border-white/10">
+                                {{ member.first_name|slice:":1" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="text-2xl font-bold text-white mb-1">{{ member.first_name }}</h1>
+                    <p class="text-indigo-200 uppercase tracking-widest text-xs font-bold">{{ member.last_name_paterno }}</p>
+                    
+                    {% if member.qr_code %}
+                    <div class="mt-8 p-3 bg-white rounded-xl shadow-inner">
+                        <img src="{{ member.qr_code.url }}" class="w-32 h-32">
+                        <p class="text-[10px] text-gray-400 mt-2 font-bold uppercase">Código de Perfil</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="md:w-2/3 p-8 md:p-12">
+                    {% if edit_mode %}
+                        <form method="post" enctype="multipart/form-data" class="space-y-6">
+                            {% csrf_token %}
+                            <h3 class="text-indigo-900 text-lg font-bold mb-4 border-b pb-2">Editar Información de {{ member.first_name }}</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {{ form.as_p }}
+                            </div>
+
+                            <div class="mt-8 flex items-center gap-4 border-t pt-6">
+                                <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all">
+                                    Guardar Cambios
+                                </button>
+                                <a href="{% url 'members:member_detail' member.pk %}" class="text-gray-500 font-bold hover:text-gray-700">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Información Personal</h3>
+                                <ul class="space-y-4">
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ member.birth_date|date:"d/m/Y"|default:"No registrada" }}</span>
+                                        <span class="text-xs text-gray-400">Fecha de Nacimiento</span>
+                                    </li>
+                                    {% if member.death_date %}
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-red-600">{{ member.death_date|date:"d/m/Y" }}</span>
+                                        <span class="text-xs text-gray-400">Fecha de Fallecimiento</span>
+                                    </li>
+                                    {% endif %}
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">
+                                            {% if member.edad %}{{ member.edad }} años{% else %}N/A{% endif %}
+                                        </span>
+                                        <span class="text-xs text-gray-400">{% if member.death_date %}Edad al fallecer{% else %}Edad actual{% endif %}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Origen y Contacto</h3>
+                                <ul class="space-y-4">
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ member.lugar_nacimiento|default:"-" }}</span>
+                                        <span class="text-xs text-gray-400">Lugar de Nacimiento</span>
+                                    </li>
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ member.ocupacion|default:"-" }}</span>
+                                        <span class="text-xs text-gray-400">Ocupación</span>
+                                    </li>
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-indigo-600">{{ member.telefono|default:"-" }}</span>
+                                        <span class="text-xs text-gray-400">WhatsApp / Tel</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {% if member.biografia %}
+                        <div class="mt-10 pt-8 border-t border-gray-100">
+                            <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Biografía / Notas</h3>
+                            <p class="text-gray-600 leading-relaxed italic">"{{ member.biografia }}"</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 pt-8 border-t border-gray-100">
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
+                                    Núcleo Directo
+                                </h3>
+                                <div class="space-y-4">
+                                    {% for label, persona in relations %}
+                                        <div class="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-100 shadow-sm">
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-400 uppercase">{{ label }}</p>
+                                                {% if persona %}
+                                                    <a href="{% url 'members:member_detail' persona.pk %}" class="text-sm font-bold text-indigo-600 hover:underline">
+                                                        {{ persona.first_name }} {{ persona.last_name_paterno }}
+                                                    </a>
+                                                {% else %}
+                                                    <p class="text-sm text-gray-300 italic">No registrado</p>
+                                                {% endif %}
+                                            </div>
+                                            {% if persona and persona.foto_principal %}
+                                                <img src="{{ persona.foto_principal.url }}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span class="w-2 h-6 bg-green-500 rounded-full"></span>
+                                    Descendencia
+                                </h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Hijos ({{ hijos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for hijo in hijos %}
+                                                <a href="{% url 'members:member_detail' hijo.pk %}" class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100 hover:bg-green-100">
+                                                    {{ hijo.first_name }}
+                                                </a>
+                                            {% empty %}
+                                                <span class="text-xs text-gray-300 italic">Sin hijos registrados</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    {% if nietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Nietos ({{ nietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for nieto in nietos %}
+                                                <a href="{% url 'members:member_detail' nieto.pk %}" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                                                    {{ nieto.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if bisnietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Bisnietos ({{ bisnietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for b in bisnietos %}
+                                                <a href="{% url 'members:member_detail' b.pk %}" class="px-2 py-1 bg-orange-50 text-orange-700 rounded text-xs border border-orange-100">
+                                                    {{ b.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if tataranietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Tataranietos ({{ tataranietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for t in tataranietos %}
+                                                <a href="{% url 'members:member_detail' t.pk %}" class="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs border border-purple-100">
+                                                    {{ t.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div> 
+            </div> 
+        </div> 
+        
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 mb-20">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <span class="w-3 h-8 bg-indigo-600 rounded-full"></span>
+                Árbol Genealógico Interactivo
+            </h3>
+            <div id="tree-container" class="w-full h-[600px] bg-slate-50 rounded-2xl overflow-hidden cursor-move border border-gray-100 shadow-inner">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const treeData = {{ family_data_json|safe }};
+        const container = document.getElementById('tree-container');
+        const width = container.offsetWidth;
+        const height = 600;
+
+        const svg = d3.select("#tree-container")
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", height)
+            .call(d3.zoom().on("zoom", (event) => {
+                g.attr("transform", event.transform);
+            }))
+            .append("g");
+
+        const g = svg.append("g").attr("transform", "translate(80,0)");
+
+        const tree = d3.tree().size([height - 100, width - 300]);
+        const root = d3.hierarchy(treeData);
+        tree(root);
+
+        // Enlaces
+        g.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("fill", "none")
+            .attr("stroke", "#cbd5e1")
+            .attr("stroke-width", 2)
+            .attr("d", d3.linkHorizontal()
+                .x(d => d.y)
+                .y(d => d.x));
+
+        // Nodos
+        const node = g.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", d => "node " + (d.children ? " node--internal" : " node--leaf"))
+            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .style("cursor", "pointer")
+            .on("click", (event, d) => {
+                window.location.href = `/members/${d.data.pk}/`;
+            });
+
+        node.append("circle")
+            .attr("r", 24)
+            .attr("fill", "#fff")
+            .attr("stroke", d => d.depth === 0 ? "#4f46e5" : "#10b981")
+            .attr("stroke-width", 3);
+
+        node.append("clipPath")
+            .attr("id", d => "clip-" + d.data.pk)
+            .append("circle")
+            .attr("r", 22);
+
+        node.append("image")
+            .attr("xlink:href", d => d.data.foto ? d.data.foto : "https://ui-avatars.com/api/?name=" + d.data.name)
+            .attr("x", -22)
+            .attr("y", -22)
+            .attr("width", 44)
+            .attr("height", 44)
+            .attr("clip-path", d => "url(#clip-" + d.data.pk + ")");
+
+        node.append("text")
+            .attr("dy", "1.2em")
+            .attr("x", d => d.children ? -30 : 30)
+            .attr("text-anchor", d => d.children ? "end" : "start")
+            .text(d => d.data.name)
+            .attr("class", "text-xs font-bold fill-gray-700");
+
+        node.append("text")
+            .attr("dy", "2.4em")
+            .attr("x", d => d.children ? -30 : 30)
+            .attr("text-anchor", d => d.children ? "end" : "start")
+            .text(d => d.data.last_name)
+            .attr("class", "text-[10px] fill-gray-400 uppercase tracking-tighter");
+    });
+</script>
+
+<style>
+    .node text { font-family: sans-serif; }
+    .link { transition: stroke 0.3s; }
+    .node:hover circle { stroke: #4f46e5; stroke-width: 5px; }
+</style>
+{% endblock %}

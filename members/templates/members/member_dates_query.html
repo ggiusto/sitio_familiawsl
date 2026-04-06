@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800 border-b pb-4">Familia Bidart Solari y Parientes</h1>
+
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 bg-blue-50 p-6 rounded-lg border border-blue-100">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Nombre/Apellido</label>
+                <input type="text" name="q" value="{{ query_params.q|default:'' }}" placeholder="Buscar..." 
+                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Mes Nacimiento</label>
+                <select name="month_birth" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <option value="">Todos</option>
+                    <option value="1" {% if query_params.month_birth == "1" %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if query_params.month_birth == "2" %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if query_params.month_birth == "3" %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if query_params.month_birth == "4" %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if query_params.month_birth == "5" %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if query_params.month_birth == "6" %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if query_params.month_birth == "7" %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if query_params.month_birth == "8" %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if query_params.month_birth == "9" %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if query_params.month_birth == "10" %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if query_params.month_birth == "11" %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if query_params.month_birth == "12" %}selected{% endif %}>Diciembre</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Estado</label>
+                <select name="status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                    <option value="">Todos</option>
+                    <option value="vivos" {% if query_params.status == "vivos" %}selected{% endif %}>Solo Vivos</option>
+                    <option value="fallecidos" {% if query_params.status == "fallecidos" %}selected{% endif %}>Solo Fallecidos</option>
+                </select>
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow transition">
+                    Filtrar Resultados
+                </button>
+            </div>
+        </form>
+
+        <div class="flex flex-wrap gap-4 mb-4 justify-end">
+            <a href="{% url 'members:export_excel' %}?{{ request.GET.urlencode }}" 
+               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded flex items-center shadow transition">
+                <span class="mr-2">📊</span> Exportar Excel
+            </a>
+            <a href="{% url 'members:export_pdf' %}?{{ request.GET.urlencode }}" 
+               class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded flex items-center shadow transition">
+                <span class="mr-2">📄</span> Descargar PDF
+            </a>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miembro</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nacimiento</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fallecimiento</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Edad</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for member in members %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                            <a href="{% url 'members:member_detail' member.pk %}">{{ member.first_name }} {{ member.last_name_paterno }}</a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {{ member.birth_date|date:"d / m / Y"|default:"---" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {% if member.fallecimiento_date %}
+                                <span class="text-red-600">✝ {{ member.fallecimiento_date|date:"d / m / Y" }}</span>
+                            {% else %}
+                                <span class="text-green-600">Vivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {% if member.birth_date %}
+                                {{ member.edad_actual }} {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-10 text-center text-gray-500">No se encontraron miembros con esos filtros.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10">
+    <div class="max-w-5xl mx-auto px-4">
+        
+        <div class="flex justify-between items-center mb-6">
+            <a href="{% url 'members:member_list' %}" class="text-indigo-600 hover:text-indigo-800 flex items-center gap-2 font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Volver al Directorio
+            </a>
+            
+            <div class="flex flex-wrap justify-end items-center gap-3">
+                <a href="{% url 'members:member_update' member.pk %}" 
+                   class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    Editar Perfil
+                </a>
+
+                <div class="flex flex-col items-center">
+                    <button onclick="prepararEImprimir()" 
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold shadow-sm transition-all transform hover:scale-105 flex items-center gap-2 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        Imprimir Árbol
+                    </button>
+                    <span class="text-[9px] text-gray-400 italic mt-1">Sugerencia: Orientación "Horizontal"</span>
+                </div>
+
+                <a href="{% url 'members:export_pdf' member.pk %}" 
+                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9 2a2 2 0 00-2 2v8a2 2 0 002 2h6a2 2 0 002-2V6.414A2 2 0 0016.414 5L14 2.586A2 2 0 0012.586 2H9z"/><path d="M3 8a2 2 0 012-2v10h8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
+                    Descargar PDF
+                </a>
+            </div>
+        </div>
+
+        <div id="print-guide" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl p-6 max-w-sm text-center shadow-2xl">
+                <h3 class="text-lg font-bold text-gray-900">Preparando Impresión</h3>
+                <p class="text-gray-600 text-sm mt-2">Para que el árbol se vea completo, asegúrese de seleccionar <b>Horizontal (Landscape)</b> en los ajustes de su impresora.</p>
+                <button onclick="ejecutarImpresion()" class="mt-6 w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-colors">Entendido, imprimir</button>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 mb-8">
+            <div class="md:flex">
+                <div class="md:w-1/3 bg-indigo-900 p-8 text-center flex flex-col items-center justify-center">
+                    <div class="relative mb-6">
+                        {% if member.foto_principal %}
+                            <img src="{{ member.foto_principal.url }}" class="w-48 h-48 rounded-2xl object-cover border-4 border-white/20 shadow-2xl">
+                        {% else %}
+                            <div class="w-48 h-48 rounded-2xl bg-indigo-800 flex items-center justify-center text-white text-6xl font-bold border-4 border-white/10">
+                                {{ member.first_name|slice:":1" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h1 class="text-2xl font-bold text-white mb-1">{{ member.first_name }}</h1>
+                    <p class="text-indigo-200 uppercase tracking-widest text-xs font-bold">{{ member.last_name_paterno }}</p>
+                    
+                    {% if member.qr_code %}
+                    <div class="mt-8 p-3 bg-white rounded-xl shadow-inner">
+                        <img src="{{ member.qr_code.url }}" class="w-32 h-32">
+                        <p class="text-[10px] text-gray-400 mt-2 font-bold uppercase">Código de Perfil</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="md:w-2/3 p-8 md:p-12">
+                    {% if edit_mode %}
+                        <form method="post" enctype="multipart/form-data" class="space-y-6">
+                            {% csrf_token %}
+                            <h3 class="text-indigo-900 text-lg font-bold mb-4 border-b pb-2">Editar Información</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {{ form.as_p }}
+                            </div>
+                            <div class="mt-8 flex items-center gap-4 border-t pt-6">
+                                <button type="submit" class="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all">Guardar Cambios</button>
+                                <a href="{% url 'members:member_detail' member.pk %}" class="text-gray-500 font-bold hover:text-gray-700">Cancelar</a>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Información Personal</h3>
+                                <ul class="space-y-4">
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ member.birth_date|date:"d/m/Y"|default:"No registrada" }}</span>
+                                        <span class="text-xs text-gray-400">Fecha de Nacimiento</span>
+                                    </li>
+                                    {% if member.death_date %}
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-red-600">{{ member.death_date|date:"d/m/Y" }}</span>
+                                        <span class="text-xs text-gray-400">Fecha de Fallecimiento</span>
+                                    </li>
+                                    {% endif %}
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">
+                                            {% if member.edad %}{{ member.edad }} años{% else %}N/A{% endif %}
+                                        </span>
+                                        <span class="text-xs text-gray-400">{% if member.death_date %}Edad al fallecer{% else %}Edad actual{% endif %}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Origen y Contacto</h3>
+                                <ul class="space-y-4">
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ member.lugar_nacimiento|default:"-" }}</span>
+                                        <span class="text-xs text-gray-400">Lugar de Nacimiento</span>
+                                    </li>
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ member.ocupacion|default:"-" }}</span>
+                                        <span class="text-xs text-gray-400">Ocupación</span>
+                                    </li>
+                                    <li class="flex flex-col">
+                                        <span class="text-sm font-bold text-indigo-600">{{ member.telefono|default:"-" }}</span>
+                                        <span class="text-xs text-gray-400">WhatsApp / Tel</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {% if member.biografia %}
+                        <div class="mt-10 pt-8 border-t border-gray-100">
+                            <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">Biografía / Notas</h3>
+                            <p class="text-gray-600 leading-relaxed italic text-sm">"{{ member.biografia }}"</p>
+                        </div>
+                        {% endif %}
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12 pt-8 border-t border-gray-100">
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span class="w-2 h-6 bg-indigo-600 rounded-full"></span>
+                                    Núcleo Directo
+                                </h3>
+                                <div class="space-y-4">
+                                    {% for label, persona in relations %}
+                                        <div class="flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-100 shadow-sm">
+                                            <div>
+                                                <p class="text-[10px] font-bold text-gray-400 uppercase">{{ label }}</p>
+                                                {% if persona %}
+                                                    <a href="{% url 'members:member_detail' persona.pk %}" class="text-sm font-bold text-indigo-600 hover:underline">
+                                                        {{ persona.first_name }} {{ persona.last_name_paterno }}
+                                                    </a>
+                                                {% else %}
+                                                    <p class="text-sm text-gray-300 italic">No registrado</p>
+                                                {% endif %}
+                                            </div>
+                                            {% if persona and persona.foto_principal %}
+                                                <img src="{{ persona.foto_principal.url }}" class="w-10 h-10 rounded-full object-cover border border-gray-200">
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                    <span class="w-2 h-6 bg-green-500 rounded-full"></span>
+                                    Descendencia
+                                </h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Hijos ({{ hijos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for hijo in hijos %}
+                                                <a href="{% url 'members:member_detail' hijo.pk %}" class="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-bold border border-green-100 hover:bg-green-100 transition-colors">
+                                                    {{ hijo.first_name }}
+                                                </a>
+                                            {% empty %}
+                                                <span class="text-xs text-gray-300 italic">Sin hijos registrados</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    {% if nietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-3">Nietos ({{ nietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for nieto in nietos %}
+                                                <a href="{% url 'members:member_detail' nieto.pk %}" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100 hover:bg-blue-100 transition-colors">
+                                                    {{ nieto.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if bisnietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Bisnietos ({{ bisnietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for b in bisnietos %}
+                                                <a href="{% url 'members:member_detail' b.pk %}" class="px-2 py-1 bg-orange-50 text-orange-700 rounded text-xs border border-orange-100 hover:bg-orange-100 transition-colors">
+                                                    {{ b.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if tataranietos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Tataranietos ({{ tataranietos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for t in tataranietos %}
+                                                <a href="{% url 'members:member_detail' t.pk %}" class="px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs border border-purple-100 hover:bg-purple-100 transition-colors">
+                                                    {{ t.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    {% if choznos %}
+                                    <div>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase mb-2">Choznos ({{ choznos.count }})</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for c in choznos %}
+                                                <a href="{% url 'members:member_detail' c.pk %}" class="px-2 py-1 bg-slate-100 text-slate-700 rounded text-xs border border-slate-200 hover:bg-slate-200 transition-colors">
+                                                    {{ c.first_name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 mb-20">
+            <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                <span class="w-3 h-8 bg-indigo-600 rounded-full"></span>
+                Árbol Genealógico Interactivo
+            </h3>
+            <div id="tree-container" class="w-full h-[600px] bg-slate-50 rounded-2xl overflow-hidden cursor-move border border-gray-100 shadow-inner">
+                </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<div id="tree-container" class="w-full bg-white border rounded-xl shadow-inner" style="min-height: 600px; position: relative;"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // 1. Verificamos el ID
+    const memberId = "{{ member.pk|escapejs }}"; 
+    if (!memberId) return;
+
+    // 2. Construcción de URL manual para evitar errores de TemplateSyntax
+    // IMPORTANTE: No pongas etiquetas {% url %} incompletas ni siquiera en comentarios
+    const url = "/members/api/tree-data/" + memberId + "/";
+
+    console.log("Cargando árbol desde:", url);
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error("Error " + response.status);
+            return response.json();
+        })
+        .then(treeData => {
+            if (treeData && typeof renderTree === "function") {
+                renderTree(treeData);
+            }
+        })
+        .catch(error => console.error("Error:", error));
+});
+
+// Asegúrate de que tu función renderTree esté definida aquí o importada
+function renderTree(data) {
+    console.log("Dibujando datos:", data);
+    // ... tu código de D3.js ...
+}
+</script>
+
+<style>
+    /* Estilos para animar el árbol al cargar */
+    .link {
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: dash 1.5s linear forwards;
+    }
+
+    @keyframes dash {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+
+    .node:hover circle {
+        stroke: #1e1b4b;
+        stroke-width: 4px;
+        transition: all 0.3s ease;
+    }
+</style>
+
+<style>
+    /* 1. Contenedor del Árbol - Unificado */
+    #tree-container {
+        width: 100%;
+        min-height: 600px;
+        overflow: hidden;
+        border-radius: 12px; /* 0.75rem */
+        border: 1px solid #e5e7eb;
+        background: #f9fafb; /* Color de fondo recuperado del segundo bloque */
+        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+        position: relative; /* Recomendado para que D3 calcule bien las dimensiones */
+    }
+
+    /* 2. Interactividad de los Nodos */
+    .node circle {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .node:hover circle { 
+        stroke-width: 6px; 
+    }
+
+    /* 3. Animación de las Líneas (Links) */
+    .link {
+        /* Se eliminan los valores fijos exagerados (1000) 
+           porque si la línea es corta, la animación se ve lenta o no se ve. */
+        stroke-dasharray: 500;
+        stroke-dashoffset: 500;
+        animation: draw-tree-link 1.5s ease-out forwards;
+    }
+
+    @keyframes draw-tree-link {
+        to { stroke-dashoffset: 0; }
+    }
+
+    /* 4. Optimización para Impresión */
+    @media print {
+        @page { 
+            size: A4 landscape; 
+            margin: 0; 
+        }
+        
+        /* Oculta todo excepto el árbol */
+        body > *:not(.main-container-selector), /* Ajusta este selector si es necesario */
+        nav, footer, button, .no-print { 
+            display: none !important; 
+        }
+
+        #tree-container { 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            width: 100vw !important; 
+            height: 100vh !important;
+            border: none !important;
+            background: white !important;
+            visibility: visible !important;
+        }
+
+        #tree-container * { 
+            visibility: visible !important; 
+        }
+        
+        /* Quitar la animación en la impresión para que las líneas salgan completas */
+        .link {
+            animation: none !important;
+            stroke-dashoffset: 0 !important;
+        }
+    }
+</style>

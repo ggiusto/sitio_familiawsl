@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load member_extras %} {# ¡CORRECCIÓN CLAVE!: Carga el módulo de filtros personalizados #}
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10">
+<div class="max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">
+        {% if form.instance.pk %}Editar Miembro{% else %}Agregar Miembro{% endif %}
+    </h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="border-b mb-4">
+            <nav class="flex space-x-2 overflow-x-auto whitespace-nowrap" id="tabs">
+                {% for tab in tabs %}
+                <button type="button" class="tab-btn py-2 px-4 text-sm text-gray-600 border-b-2 border-transparent hover:text-blue-600 hover:border-blue-600 {% if forloop.first %}active border-blue-600 text-blue-600{% endif %}" data-tab="{{ tab }}">{{ tab|capfirst }}</button>
+                {% endfor %}
+            </nav>
+        </div>
+
+        <div id="tab-content" class="space-y-6">
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4 active">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name in tab_fields.DatosPersonales %}
+                        <div class="{% if field_name == 'first_name' or field_name == 'last_name_paterno' or field_name == 'last_name_materno' %}md:col-span-1{% else %}md:col-span-1{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">
+                                    {% for error in field.errors %}
+                                        {{ error|striptags }}
+                                    {% endfor %}
+                                </p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+            
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name in tab_fields.RelacionesFamiliares %}
+                        <div class="md:col-span-1">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="tab-panel grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name in tab_fields.Contacto %}
+                        <div class="md:col-span-1">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+
+            <div class="tab-panel hidden">
+                {% for field in form %}
+                    {% with field_name=field.name %}
+                    {% if field_name == 'foto_principal' %}
+                        <div class="mb-4">
+                            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">Foto Principal</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <p class="text-sm text-red-600">{{ field.errors|striptags }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between mt-8 space-y-4 sm:space-y-0 sm:space-x-4">
+            <a href="{% url 'members:member_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg text-center w-full sm:w-auto">Cancelar</a>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg text-center w-full sm:w-auto">Guardar</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const buttons = document.querySelectorAll(".tab-btn");
+    const panels = document.querySelectorAll(".tab-panel");
+
+    buttons.forEach(button => {
+        button.addEventListener("click", () => {
+            buttons.forEach(btn => btn.classList.remove("active", "border-blue-600", "text-blue-600"));
+            button.classList.add("active", "border-blue-600", "text-blue-600");
+
+            panels.forEach(panel => panel.classList.add("hidden"));
+            document.querySelector(`.tab-panel[data-tab="${button.dataset.tab}"]`).classList.remove("hidden");
+        });
+    });
+
+    // Initialize Flatpickr for date fields
+    flatpickr("input[type=date]", {
+        dateFormat: "Y-m-d", // Format matching Django's DateField
+        altInput: true,
+        altFormat: "d-m-Y",
+        locale: "es", // Ensure Spanish localization if available
+    });
+
+    // Set initial active tab (e.g., the first one)
+    if (buttons.length > 0) {
+        buttons[0].click(); // Simulate click on the first button to show its panel
+    }
+});
+</script>

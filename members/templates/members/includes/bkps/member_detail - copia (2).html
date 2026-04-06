@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% load member_extras %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-10 px-4">
+    <div class="max-w-6xl mx-auto bg-white p-8 rounded-lg shadow-md">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">{{ member.first_name }} {{ member.last_name_paterno }}</h1>
+            {% if member.foto_principal %}
+                <img src="{{ member.foto_principal.url }}" class="w-32 h-32 mx-auto rounded-full object-cover mt-4 shadow-md">
+            {% endif %}
+        </div>
+
+        <div class="border-b mb-4">
+            <nav class="flex space-x-4 overflow-x-auto" id="tabs">
+                <button class="tab-btn py-2 px-4 border-b-2 border-blue-600 text-blue-600" data-tab="datos">Datos</button>
+                <button class="tab-btn py-2 px-4 border-b-2 border-transparent" data-tab="arbol">Árbol Genealógico</button>
+                <button class="tab-btn py-2 px-4 border-b-2 border-transparent" data-tab="contacto">Contacto</button>
+                <button class="tab-btn py-2 px-4 border-b-2 border-transparent" data-tab="redes">Redes</button>
+            </nav>
+        </div>
+
+        <div id="tab-content">
+            <div class="tab-panel" data-tab="datos">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-bold border-b pb-2 mb-3 text-blue-800 uppercase text-xs tracking-wider">Información Directa</h3>
+                            <p class="mb-1"><strong>Padre:</strong> {% if padre_obj %}<a href="{% url 'members:member_detail' padre_obj.pk %}" class="text-blue-600 hover:underline">{{ padre_obj }}</a>{% else %}<span class="text-gray-400">N/R</span>{% endif %}</p>
+                            <p class="mb-1"><strong>Madre:</strong> {% if madre_obj %}<a href="{% url 'members:member_detail' madre_obj.pk %}" class="text-blue-600 hover:underline">{{ madre_obj }}</a>{% else %}<span class="text-gray-400">N/R</span>{% endif %}</p>
+                            <p class="mb-1"><strong>Cónyuge:</strong> {% if conyuge_obj %}<a href="{% url 'members:member_detail' conyuge_obj.pk %}" class="text-blue-600 hover:underline">{{ conyuge_obj }}</a>{% else %}<span class="text-gray-400">N/R</span>{% endif %}</p>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold border-b pb-2 mb-3 text-blue-800 uppercase text-xs tracking-wider">Descendencia</h3>
+                            <p class="mb-2"><strong>Hijos:</strong> 
+                                {% for hijo in hijos_list %}
+                                    <a href="{% url 'members:member_detail' hijo.pk %}" class="inline-block bg-blue-50 text-blue-700 px-2 py-1 rounded text-sm mb-1 hover:bg-blue-100">{{ hijo }}</a>{% if not forloop.last %} {% endif %}
+                                {% empty %}
+                                    <span class="text-gray-400 italic">Sin hijos registrados</span>
+                                {% endfor %}
+                            </p>
+                            <p class="mb-1"><strong>Nietos:</strong> 
+                                {% for nieto in nietos_list %}
+                                    <a href="{% url 'members:member_detail' nieto.pk %}" class="inline-block bg-gray-50 text-gray-700 px-2 py-1 rounded text-sm mb-1 hover:bg-gray-100">{{ nieto }}</a>{% if not forloop.last %} {% endif %}
+                                {% empty %}
+                                    <span class="text-gray-400 italic">Sin nietos registrados</span>
+                                {% endfor %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-bold border-b pb-2 mb-3 text-blue-800 uppercase text-xs tracking-wider">Fechas Clave</h3>
+                            <p class="mb-1">
+                                <strong class="text-gray-600">Fecha de Nacimiento:</strong> 
+                                <span class="text-gray-800">
+                                    {% if member.birth_date %}
+                                        {{ member.birth_date|date:"d \d\e F \d\e Y" }}
+                                        {% if not member.fallecimiento_date %}
+                                            <span class="ml-2 bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-green-200">
+                                                {{ member.edad }} años
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-gray-400 italic">No registrada</span>
+                                    {% endif %}
+                                </span>
+                            </p>
+                            {% if member.fallecimiento_date %}
+                            <p class="mb-1">
+                                <strong class="text-gray-600">Fecha de Fallecimiento:</strong> 
+                                <span class="text-gray-800">
+                                    {{ member.fallecimiento_date|date:"d \d\e F \d\e Y" }}
+                                    <span class="ml-2 bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-gray-300">
+                                        Falleció a los {{ member.edad }} años
+                                    </span>
+                                </span>
+                            </p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold border-b pb-2 mb-3 text-blue-800 uppercase text-xs tracking-wider">Otros Detalles</h3>
+                            {% for field in general_info_fields %}
+                                {% if field.name != 'birth_date' and field.name != 'fallecimiento_date' %}
+                                    {% with val=member|get_attribute:field.name %}
+                                        {% if val %}
+                                            <p class="mb-1"><strong class="text-gray-600">{{ field.verbose_name }}:</strong> {{ val }}</p>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-panel hidden" data-tab="contacto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for field in contacto_fields_list %}
+                        {% if field.value %}
+                            <div class="p-4 border rounded-lg bg-gray-50 shadow-sm">
+                                <span class="font-bold text-gray-600 block text-sm uppercase">{{ field.name }}</span>
+                                <span class="text-lg text-gray-800">{{ field.value }}</span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% if not member.correomail and not member.phone_number and not member.address %}
+                    <p class="text-gray-500 italic text-center py-4">No hay información de contacto registrada.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-panel hidden" data-tab="redes">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {% for field in redes_fields_list %}
+                        {% if field.value %}
+                            <div class="p-4 border rounded-lg bg-white flex flex-col items-center text-center shadow-sm">
+                                <span class="font-bold text-blue-600 mb-1">{{ field.name }}</span>
+                                <span class="text-gray-700 break-all">{{ field.value }}</span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% if not member.whatsapp and not member.facebook and not member.instagram and not member.linkedin %}
+                    <p class="text-gray-500 italic text-center py-4">No hay redes sociales registradas.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-panel hidden" data-tab="arbol">
+                <div id="tree-container" class="border rounded-lg bg-gray-50 overflow-hidden" style="height: 600px;">
+                    <svg id="family-tree-svg" class="w-full h-full"></svg>
+                </div>
+                <p class="text-xs text-gray-400 mt-2 text-center">Puedes usar el mouse para hacer zoom y arrastrar el árbol.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+    
+    tabs.forEach(t => t.addEventListener('click', () => {
+        tabs.forEach(btn => btn.classList.remove('border-blue-600', 'text-blue-600'));
+        panels.forEach(p => p.classList.add('hidden'));
+        t.classList.add('border-blue-600', 'text-blue-600');
+        const active = document.querySelector(`.tab-panel[data-tab="${t.dataset.tab}"]`);
+        active.classList.remove('hidden');
+        if(t.dataset.tab === 'arbol' && !window.treeRendered) renderTree();
+    }));
+
+    function renderTree() {
+        const memberId = "{{ member.pk }}";
+        d3.json(`/members/${memberId}/family-tree-data/`).then(data => {
+            if(!data) return;
+            const svg = d3.select("#family-tree-svg");
+            const g = svg.append("g");
+            const zoom = d3.zoom().on("zoom", (e) => g.attr("transform", e.transform));
+            svg.call(zoom);
+
+            const tree = d3.tree().nodeSize([200, 120]);
+            const root = d3.hierarchy(data);
+            tree(root);
+
+            g.selectAll(".link").data(root.links()).enter().append("path")
+                .attr("fill", "none").attr("stroke", "#ccc").attr("stroke-width", 2)
+                .attr("d", d3.linkVertical().x(d => d.x).y(d => d.y));
+
+            const node = g.selectAll(".node").data(root.descendants()).enter().append("g")
+                .attr("transform", d => `translate(${d.x - 80},${d.y - 30})`)
+                .on("click", (e, d) => { if(d.data.id) window.location.href = `/members/${d.data.id}/`; });
+
+            node.append("rect").attr("width", 160).attr("height", 60).attr("rx", 10)
+                .attr("fill", d => d.data.is_current ? "#4f46e5" : "#fff").attr("stroke", "#4f46e5");
+
+            node.append("text").attr("x", 80).attr("y", 35).attr("text-anchor", "middle")
+                .attr("fill", d => d.data.is_current ? "#fff" : "#000").text(d => d.data.name);
+
+            svg.call(zoom.transform, d3.zoomIdentity.translate(svg.node().clientWidth/2, 100).scale(0.8));
+            window.treeRendered = true;
+        });
+    }
+});
+</script>
+{% endblock %}

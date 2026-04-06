@@ -7,21 +7,27 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY')
-if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY not set in environment")
+# Configuración de Seguridad Básica
+SECRET_KEY = 'django-insecure-test-key-sin-caracteres-especiales'
+DEBUG = True  # Cambiar a False en producción
 
-DEBUG = False  # Cambiar a False en producción
-ALLOWED_HOSTS = ['*']  # Cambiar en producción
+# Configuración de Dominios Permitidos
+ALLOWED_HOSTS = [
+    'familia.gusbidart.org',
+    'gusbidart.org',
+    'localhost',
+    '127.0.0.1'
+]
 
-# Archivos estáticos y media
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Configuración de Orígenes Confiables para CSRF (Necesario para Login/Formularios)
+CSRF_TRUSTED_ORIGINS = [
+    'https://familia.gusbidart.org',
+    'https://gusbidart.org'
+]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / "media"
+# Configuración para túneles y Proxies (Cloudflare)
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Aplicaciones instaladas
 INSTALLED_APPS = [
@@ -53,7 +59,10 @@ ROOT_URLCONF = 'sitio_familia.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR / 'members' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -68,23 +77,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sitio_familia.wsgi.application'
 
-# Base de datos
+# Base de Datos PostgreSQL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': 'localhost',
+        'NAME': 'sitio_familia',
+        'USER': 'ggiusto',
+        'PASSWORD': 'Calistemo23!',
+        'HOST': '127.0.0.1',
         'PORT': '5432',
     }
 }
 
-# Configuración para Heroku
-db_from_env = dj_database_url.config(conn_max_age=500)
-DATABASES['default'].update(db_from_env)
-
-
+# Validación de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -92,19 +97,28 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
+# Internacionalización
 LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
 
+# Redirecciones de Login
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Seguridad en producción (desactivado para desarrollo local)
+# Archivos estáticos y media
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Seguridad adicional (Ajustes para desarrollo con Túnel)
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
-
-
